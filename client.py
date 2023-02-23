@@ -1,11 +1,11 @@
 import os
-from socket import *
+import socket
 
-serverName = "localhost"
+serverName = socket.gethostbyname(socket.gethostname())
 serverPort = 12000
 
 while True:
-    clientSocket = socket(AF_INET, SOCK_STREAM)
+    clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     clientSocket.connect((serverName,serverPort))
 
     filename = input("Enter the name of the file you want to search for:\n")
@@ -19,7 +19,7 @@ while True:
     if ("not" not in return_message):
         down = input("Do you want to download the file (y/n)\n")
         if down:
-            clientSocket = socket(AF_INET, SOCK_STREAM)
+            clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             clientSocket.connect((serverName,serverPort))
 
             message = "download " + filename 
@@ -38,8 +38,3 @@ while True:
             print("File received!")
 
             clientSocket.close()
-            
-            
-        
-    
-    # x = input("buffer")
