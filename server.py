@@ -1,11 +1,12 @@
 import os
 from socket import *
+from . import serv_utils
 
 serverPort = 12000
 serverSocket = socket(AF_INET, SOCK_STREAM)
 serverSocket.bind(("",serverPort))
 serverSocket.listen(1)
-print("The server is ready to receive.\n")
+print("The server is ready to receive")
 
 while True:
     connectSocket, addr = serverSocket.accept()

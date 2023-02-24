@@ -1,4 +1,5 @@
 #from cryptography.fernet import Fernet
+import os.path
 
 def login(username, passwd):
     hashed = username + "," + passwd
@@ -62,17 +63,19 @@ def add_user(username, passwd):
             print("user already in")
     """
 
-
-def transfer(filename):
-    f = open(f"./serverfiles/{filename}", "rb")
-    content = f.read()
-    print("file downloaded...")
-    f.close()
-
-    fw = open(f"./downloads/{filename}", "wb")
-    fw.write(content)
-    fw.close()
-    print("file sent")
-
-
 print(login("tpchiks", "343f"))
+
+
+def downloads(connection,address,textfileName):
+    directory,textfile = textfileName.split(' ')
+    print(f"Checking if the file with name {textfile} exists")
+    if(os.path.exists(textfile)):
+        print(f"File {textfile} exixts!")
+        print(f"Downloading file {textfile} into directory {directory}")
+        file = open(f"./serverfiles/{textfile}","r")
+        data=file.read()
+        connection.send(data.encode("utf-8"))
+        file.close()
+        print("File has been sent!")
+    else:
+        print(f"The file under the name {textfile} does not exist")
