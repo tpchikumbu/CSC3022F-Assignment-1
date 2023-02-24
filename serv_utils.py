@@ -1,67 +1,182 @@
-#from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet
+import os.path
+from time import time
 
 def login(username, passwd):
-    hashed = username + "," + passwd
-
-    with open("./users.txt", "r") as users:
-        for user in users:
-            if user.strip() == hashed: return True
-
-    return False
-    #this implementation is put on hold until we can fix issues with new line issue
     """
-    hashed = username + "," + passwd
+    Method to login users into the server.
 
+    params:
+        username: the user's unique username in the server
+        passwd: the user's secret password
+    
+    return:
+        True if the username and password combination exists in the server otherwise False.
+    """
+
+    # reading in the encryption key
+    if not os.path.isfile("./users.bin"):
+        return False, "Error: user database could not be found"
+    
+    with open("./filekey.key", "rb") as filekey:
+        key = filekey.read()
+
+    fernet = Fernet(key)
+
+    # reading in the users into a list
+    with open("./users.bin", "rb") as users:
+        all_users = users.read()
+    
+    all_users_str = fernet.decrypt(all_users).decode()
+    all_users_list = all_users_str.split("\r\n")
+    all_users_list.pop()
+
+
+    for user in all_users_list:
+        u, p = user.split(",")
+        if (u==username):
+            if (p==passwd):
+                return True, "User has been logged in successfully"
+            else:
+                return False, "Error: wrong password"
+    
+    return False, "Error: user is not registered on the server"
+
+
+def add_user(username, passwd):
+    """
+    Adds a user into the server system
+
+    params:
+        username: a string of the username (should be unique), should not contain a comma ',' character
+        passwd: the user's password, again must not contain a comma ',' character
+    
+    return:
+        True, and confirmation message, if the user was added successfully otherwise False
+    """
+
+    # the thing that will be entered into the file
+    hashed = username + "," + passwd
+    
+    # gets the hash key from the file
+    with open("./filekey.key", "rb") as filekey:
+        key = filekey.read()
+
+    fernet = Fernet(key)
+
+    isNew = False
+    # reads the users file and decrypts it then checks if the user is there
+    if not os.path.isfile("./users.bin"):
+        isNew = True
+        x = open("./users.bin", "x")
+        x.close()
+
+    if not isNew:
+        with open(f"./users.bin", "rb") as f:
+            all_users = f.read()
+
+        all_users_str = fernet.decrypt(all_users).decode()
+        all_users_list = all_users_str.split("\r\n")
+
+
+        for user in all_users_list:
+            if username in user:
+                return False, f"Error: user {username} is already registered"
+
+        all_users_str += hashed + "\r\n"
+        all_users = fernet.encrypt(all_users_str.encode())
+
+        with open(f"./users.bin", "wb") as f:
+            f.write(all_users)
+            return True, f"User {username} has been added"
+    else:
+        hashed += "\r\n"
+        x = fernet.encrypt(hashed.encode())
+        with open(f"./users.bin", "wb") as f:
+            f.write(x)
+            return True, f"User {username} has been added"
+   
+
+def user_exists(username: str):
+    """
+    Method to check if a user exists in the server.
+
+    params:
+        username: the user's unique username in the server
+    
+    return:
+        True if the user exists in the server otherwise False.
+    """
+    start = time()
+    # reading in the encryption key
+    if not os.path.isfile("./users.bin"):
+        return False, "Error: user database could not be found"
+    
+    with open("./filekey.key", "rb") as filekey:
+        key = filekey.read()
+
+    fernet = Fernet(key)
+
+    # reading in the users into a list
+    with open("./users.bin", "rb") as users:
+        all_users = users.read()
+    
+    all_users_str = fernet.decrypt(all_users).decode()
+    all_users_list = all_users_str.split("\r\n")
+    all_users_list.pop()
+
+
+    for user in all_users_list:
+        u, p = user.split(",")
+        if (u==username):
+            end = time()
+            print(f"Time taken: {end-start} seconds")
+            return True
+    
+    end = time()
+    print(f"Time taken: {end-start} seconds")
+    return False
+
+def delete_user(username: str):
+    """
+    Deletes a user from the server files
+
+    params:
+        username: the name of the user who is to be deleted from the server
+    
+    return:
+        True if the user has been successfully deleted otherwise False
+
+    """
+    if not user_exists(username): return False, "Error: user does not exist"
+    
+    # gets the hash key from the file
     with open("./filekey.key", "rb") as filekey:
         key = filekey.read()
 
     fernet = Fernet(key)
 
     with open("./users.bin", "rb") as users:
-        for user in users:
-            x = fernet.decrypt(user).decode()
-            #print(f"x\t= {x}")
-            #print(f"hash\t= {hashed}")
-            if x == hashed: return True
-
-    return False
-    """
-
-def add_user(username, passwd):
-    hashed = username + "," + passwd
-    isIn = False
-    with open("./users.txt", "r") as users:
-        for user in users:
-            if user.strip() == hashed: isIn = True
-        
-    if not isIn:
-        with open("./users.txt", "a") as users:
-            print("adding user")
-            print(hashed, file=users)
-
-    """
-    hashed = username + "," + passwd
-    
-    with open("./filekey.key", "rb") as filekey:
-        key = filekey.read()
-
-    fernet = Fernet(key)
-    x = fernet.encrypt(hashed.encode())
-
-    # have to figure out how to write one user per line encrypted
-    
-    with open("./users.bin", "ab+") as users:
-        print(f"user added: {x}")
         all_users = users.read()
-        for i in users:
-            print(i)
+    
+    all_users_str = fernet.decrypt(all_users).decode()
+    all_users_list = all_users_str.split("\r\n")
 
-        if x not in all_users:
-            users.write(x)
-        else:
-            print("user already in")
-    """
+    
+    for i in range(len(all_users_list)):
+        u, p = all_users_list[i].split(",")
+        if u==username:
+            del all_users_list[i]
+            break
+    
+    all_users_str = "\r\n".join(all_users_list)
+    write_data = fernet.encrypt(all_users_str.encode())
+    
+    with open("./users.bin", "wb") as users:
+        all_users = users.write(write_data)
+        # print(username, "was deleted from the user list")
 
+    return True, "User has been successfully removed from the server"
 
 def transfer(filename):
     f = open(f"./serverfiles/{filename}", "rb")
@@ -75,4 +190,10 @@ def transfer(filename):
     print("file sent")
 
 
-print(login("tpchiks", "343f"))
+# for i in range(10000):
+#     add_user(f"{i}", "passwd")
+
+user_exists("1")
+user_exists("200")
+user_exists("5000")
+user_exists("10000")
