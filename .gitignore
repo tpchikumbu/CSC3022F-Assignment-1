@@ -1,4 +1,6 @@
-./downloads/*
-./serverfiles/*
+downloads/*
+serverfiles/*
 *.key
-user.txt
+users.txt
+users.bin
+
