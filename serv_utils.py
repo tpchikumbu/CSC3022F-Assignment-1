@@ -1,5 +1,6 @@
 #from cryptography.fernet import Fernet
 import os
+from tqdm import tqdm
 
 
 FORMAT = "utf-8"
@@ -91,3 +92,19 @@ def viewFiles(connection):
         else:
             send_data += "\n".join(f for f in files)
         connection.send(send_data.encode(FORMAT))
+
+def upload (socket, name, size):
+    
+    bar = tqdm(range(size), f"Receiving {name}", unit="B", unit_scale=True, unit_divisor=1024)
+    f = open(f"./serverfiles/recv_{name}", "wb")
+    while True:
+        message = socket.recv(4096)
+        if not message:
+            break
+        f.write(message)
+        
+        bar.update(len(message))
+
+    f.close    
+    socket.close()
+
