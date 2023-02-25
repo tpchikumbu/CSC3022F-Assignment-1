@@ -38,3 +38,42 @@ while True:
             print("File received!")
 
             clientSocket.close()
+
+""" code to check if uploading or downloading. upload already implemented
+
+i = 0
+
+while i == 0:
+    clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    clientSocket.connect((serverName,serverPort))
+
+    operation = input("Choose an operation:\n1. [u]pload\n2. [d]ownload\n")
+    match operation[0]:
+        case "u":
+            print ("\nuploading file\n")
+            file_name = input("Enter the file to be uploaded.\n")
+            file_size = os.path.getsize(file_name)
+            message = f"upload\t{file_name }\t{file_size}"
+            clientSocket.send(message.encode("utf-8"))
+
+            bar = tqdm(range(file_size), f"Sending {file_name}", unit ="B", unit_scale=True, unit_divisor = 1024)
+            f = open(file_name, "rb")
+            while True:
+                message = f.read(4096)
+
+                if not message:
+                    break
+
+                clientSocket.sendall(message)
+                #msg = clientSocket.recv(1024).decode("utf-8")
+                bar.update(len(message))
+
+            f.close
+            clientSocket.close()
+        case "d":
+            print ("\ndownloading file\n")
+        case _:
+            print ("\nERROR: closing connection\n")
+            clientSocket.close()
+    i += 1
+"""
