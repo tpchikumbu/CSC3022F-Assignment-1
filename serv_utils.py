@@ -1,5 +1,8 @@
 #from cryptography.fernet import Fernet
-import os.path
+import os
+
+
+FORMAT = "utf-8"
 
 def login(username, passwd):
     hashed = username + "," + passwd
@@ -79,3 +82,12 @@ def downloads(connection,address,textfileName):
         print("File has been sent!")
     else:
         print(f"The file under the name {textfile} does not exist")
+
+def viewFiles(connection):
+        files = os.listdir("serverfiles")
+        send_data = "OK@"
+        if len(files) == 0:
+            send_data += "The server directory is empty"
+        else:
+            send_data += "\n".join(f for f in files)
+        connection.send(send_data.encode(FORMAT))
