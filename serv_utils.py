@@ -2,6 +2,22 @@ from cryptography.fernet import Fernet
 import os.path
 from time import time
 
+def get_key():
+    """
+    Gets the encryption key for the server
+    """
+    # maybe make a function that updates the key after some time
+    # this function then has to rewrite the users.bin file
+    try:
+        with open("./filekey.key", "rb") as filekey:
+            key = filekey.read()
+    except:
+        # return false if there was a complication in open the file
+        return False
+
+    fernet = Fernet(key)
+    return fernet
+
 def login(username, passwd):
     """
     Method to login users into the server.
@@ -18,14 +34,17 @@ def login(username, passwd):
     if not os.path.isfile("./users.bin"):
         return False, "Error: user database could not be found"
     
-    with open("./filekey.key", "rb") as filekey:
-        key = filekey.read()
-
-    fernet = Fernet(key)
+    fernet = get_key()
+    if fernet==False:
+        return False, "Error: server file encryption error."
 
     # reading in the users into a list
-    with open("./users.bin", "rb") as users:
-        all_users = users.read()
+    try:
+        with open("./users.bin", "rb") as users:
+            all_users = users.read()
+    except Exception as e:
+        print(e)
+        return False, "Error: server user file encryption error."
     
     all_users_str = fernet.decrypt(all_users).decode()
     all_users_list = all_users_str.split("\r\n")
@@ -59,10 +78,9 @@ def add_user(username, passwd):
     hashed = username + "," + passwd
     
     # gets the hash key from the file
-    with open("./filekey.key", "rb") as filekey:
-        key = filekey.read()
-
-    fernet = Fernet(key)
+    fernet = get_key()
+    if fernet==False:
+        return False, "Error: server encryption error."
 
     isNew = False
     # reads the users file and decrypts it then checks if the user is there
@@ -112,10 +130,9 @@ def user_exists(username: str):
     if not os.path.isfile("./users.bin"):
         return False, "Error: user database could not be found"
     
-    with open("./filekey.key", "rb") as filekey:
-        key = filekey.read()
-
-    fernet = Fernet(key)
+    fernet = get_key()
+    if fernet==False:
+        return False, "Error: server encryption error."
 
     # reading in the users into a list
     with open("./users.bin", "rb") as users:
@@ -151,10 +168,9 @@ def delete_user(username: str):
     if not user_exists(username): return False, "Error: user does not exist"
     
     # gets the hash key from the file
-    with open("./filekey.key", "rb") as filekey:
-        key = filekey.read()
-
-    fernet = Fernet(key)
+    fernet = get_key()
+    if fernet==False:
+        return False, "Error: server encryption error."
 
     with open("./users.bin", "rb") as users:
         all_users = users.read()
@@ -188,12 +204,3 @@ def transfer(filename):
     fw.write(content)
     fw.close()
     print("file sent")
-
-
-# for i in range(10000):
-#     add_user(f"{i}", "passwd")
-
-user_exists("1")
-user_exists("200")
-user_exists("5000")
-user_exists("10000")
