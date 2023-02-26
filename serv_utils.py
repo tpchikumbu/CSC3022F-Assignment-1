@@ -1,6 +1,7 @@
 #from cryptography.fernet import Fernet
 import os
-
+import sys
+from hashlib import md5
 
 FORMAT = "utf-8"
 
@@ -91,3 +92,11 @@ def viewFiles(connection):
         else:
             send_data += "\n".join(f for f in files)
         connection.send(send_data.encode(FORMAT))
+
+
+def md5sum(filename):
+    hash = md5()
+    with open(filename, "rb") as f:
+        for chunk in iter(lambda: f.read(128 * hash.block_size), b""):
+            hash.update(chunk)
+    return hash.hexdigest()
