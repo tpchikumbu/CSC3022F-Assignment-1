@@ -1,7 +1,13 @@
 from cryptography.fernet import Fernet
 import os.path
 from time import time
+import os
+from tqdm import tqdm
 
+
+FORMAT = "utf-8"
+
+# User authentication methods
 def get_key():
     """
     Gets the encryption key for the server
@@ -194,13 +200,43 @@ def delete_user(username: str):
 
     return True, "User has been successfully removed from the server"
 
-def transfer(filename):
-    f = open(f"./serverfiles/{filename}", "rb")
-    content = f.read()
-    print("file downloaded...")
-    f.close()
+# file transfer methods
+def downloads(connection,address,textfileName):
+    directory,textfile = textfileName.split(' ')
+    print(f"Checking if the file with name {textfile} exists")
+    if(os.path.exists(textfile)):
+        print(f"File {textfile} exixts!")
+        print(f"Downloading file {textfile} into directory {directory}")
+        file = open(f"./serverfiles/{textfile}","r")
+        data=file.read()
+        connection.send(data.encode("utf-8"))
+        file.close()
+        print("File has been sent!")
+    else:
+        print(f"The file under the name {textfile} does not exist")
 
-    fw = open(f"./downloads/{filename}", "wb")
-    fw.write(content)
-    fw.close()
-    print("file sent")
+def viewFiles(connection):
+        files = os.listdir("serverfiles")
+        send_data = "OK@"
+        if len(files) == 0:
+            send_data += "The server directory is empty"
+        else:
+            send_data += "\n".join(f for f in files)
+        connection.send(send_data.encode(FORMAT))
+
+def upload (socket, name, size):
+    
+    bar = tqdm(range(size), f"Receiving {name}", unit="B", unit_scale=True, unit_divisor=1024)
+    f = open(f"./serverfiles/recv_{name}", "wb")
+    while True:
+        message = socket.recv(4096)
+        if not message:
+            break
+        f.write(message)
+        
+        bar.update(len(message))
+
+    f.close    
+    socket.close()
+
+
