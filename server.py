@@ -5,7 +5,7 @@ import serv_utils
 CURRENT_USERS = []
 
 def main () : 
-    #IP = gethostbyname(gethostname())
+    IP = gethostbyname(gethostname())
     serverPort = 50000
     print("Starting...")
     serverSocket = socket(AF_INET, SOCK_STREAM)
@@ -56,6 +56,9 @@ def file_handling(conn, addr):
                 serv_utils.viewFiles(conn)
                 conn.recv(1024).decode()
                 conn.send("Process done.".encode())
+            elif data[0] == "DOWNLOAD":
+                print("Download request:") #add ip for logging
+                serv_utils.downloads(conn,data[1])
             else:
                 continue
         
