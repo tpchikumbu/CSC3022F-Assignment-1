@@ -1,79 +1,53 @@
+import getpass
 import os
 import socket
 
-serverName = socket.gethostbyname(socket.gethostname())
-serverPort = 50000
+def main():
+    serverName = "196.24.132.49"
+    serverPort = 50000
 
-while True:
     clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     clientSocket.connect((serverName,serverPort))
+    addr = socket.gethostbyname(socket.gethostname())
 
-    filename = input("Enter the name of the file you want to search for:\n")
-    clientSocket.send(filename.encode())
+    loggedIn = False
+    handshake = False
+    send_msg = "client ready"
 
-    confirmation = clientSocket.recv(1024)
-    return_message = confirmation.decode()
-    print(return_message)
+    for i in range(1,4):
+        username = input("Username: ")
+        password = getpass.getpass(prompt="Password:")
+        log = f"\tLogin attempt {i} by {addr}: u: {username} p: {password}"
+        send_msg = "LOGIN\t" + username + "\t" + password + log
+        clientSocket.send(send_msg.encode())
+
+        recv_msg = clientSocket.recv(1024).decode()
+        recv_args = recv_msg.split("\t")
+        if recv_args[0] == "ERROR":
+            print(f"{recv_args[0]}: {recv_msg[1]}")
+            continue
+        elif recv_args[0] == "NOTAUTH":
+            print(recv_args[1])
+            continue
+        elif recv_args[0] == "AUTH":
+            print(recv_args[1])
+            loggedIn = True
+            break
+
+    if loggedIn:
+        print("interaction was successful and user logged in")
+    else:
+        print("user is not logged in and interaction was unsucessful")
+    
+    send_msg = f"Client {addr} now disconnecting"
+    x = input("Press enter to exit.")
+    clientSocket.send(send_msg.encode())
     clientSocket.close()
 
-    if ("not" not in return_message):
-        down = input("Do you want to download the file (y/n)\n")
-        if down:
-            clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            clientSocket.connect((serverName,serverPort))
+    
+def print_menu():
+    print("1. View files\n2. Download file\n3. Upload file\n4. Logout")
 
-            message = "hello " + filename
-            clientSocket.send(message.encode())
-            
-            
-            if not os.path.isdir("./downloads"): os.mkdir("./downloads")
-            # implement getting file from the server
-            file = open(f"./downloads/{filename}", "w")
 
-            data = clientSocket.recv(1024).decode("utf-8")
-            file.write(data)
-
-            file.close()
-
-            print("File received!")
-
-            clientSocket.close()
-
-""" code to check if uploading or downloading. upload already implemented
-
-i = 0
-
-while i == 0:
-    clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    clientSocket.connect((serverName,serverPort))
-
-    operation = input("Choose an operation:\n1. [u]pload\n2. [d]ownload\n")
-    match operation[0]:
-        case "u":
-            print ("\nuploading file\n")
-            file_name = input("Enter the file to be uploaded.\n")
-            file_size = os.path.getsize(file_name)
-            message = f"upload\t{file_name }\t{file_size}"
-            clientSocket.send(message.encode("utf-8"))
-
-            bar = tqdm(range(file_size), f"Sending {file_name}", unit ="B", unit_scale=True, unit_divisor = 1024)
-            f = open(file_name, "rb")
-            while True:
-                message = f.read(4096)
-
-                if not message:
-                    break
-
-                clientSocket.sendall(message)
-                #msg = clientSocket.recv(1024).decode("utf-8")
-                bar.update(len(message))
-
-            f.close
-            clientSocket.close()
-        case "d":
-            print ("\ndownloading file\n")
-        case _:
-            print ("\nERROR: closing connection\n")
-            clientSocket.close()
-    i += 1
-"""
+if __name__=="__main__":
+    main()

@@ -38,11 +38,11 @@ def login(username, passwd):
 
     # reading in the encryption key
     if not os.path.isfile("./users.bin"):
-        return False, "Error: user database could not be found"
+        return [False, "NOTAUTH\tuser database could not be found"]
     
     fernet = get_key()
     if fernet==False:
-        return False, "Error: server file encryption error."
+        return [False, "NOTAUTH\tserver file encryption error."]
 
     # reading in the users into a list
     try:
@@ -50,7 +50,7 @@ def login(username, passwd):
             all_users = users.read()
     except Exception as e:
         print(e)
-        return False, "Error: server user file encryption error."
+        return [False, "NOTAUTH\tserver user file encryption error."]
     
     all_users_str = fernet.decrypt(all_users).decode()
     all_users_list = all_users_str.split("\r\n")
@@ -61,11 +61,11 @@ def login(username, passwd):
         u, p = user.split(",")
         if (u==username):
             if (p==passwd):
-                return True, "User has been logged in successfully"
+                return [True, "AUTH\tUser has been logged in successfully"]
             else:
-                return False, "Error: wrong password"
+                return [False, "NOTAUTH\twrong password"]
     
-    return False, "Error: user is not registered on the server"
+    return [False, "NOTAUTH\tuser is not registered on the server"]
 
 
 def add_user(username, passwd):
