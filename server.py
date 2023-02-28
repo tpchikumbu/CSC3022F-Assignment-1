@@ -45,21 +45,10 @@ def file_handling(conn, addr):
                 if loggedIn:
                     CURRENT_USERS.append(username)
                     break
-            
         
-        if loggedIn:
-            print("A user has been successfully logged in")
-            recv_msg = conn.recv(1024).decode()
-            if(recv_msg=="1"):
-                data = "OK@"
-                data += "1: List all the files from the server.\n"
-                data += "2 <path>: Upload a file to the server.\n"
-                data += "3 <filename>: Delete a file from the server.\n"
-                data += "4 <filename>: Download a file from the server.\n"
-                data += "LOGOUT: Disconnect from the server.\n"
-                data += "HELP: List all the commands."
-                conn.sendall(data.encode())
 
+        if loggedIn:
+            print(f"user {username} has been successfully logged in")
         else:
             print("user is not logged in and interaction was unsucessful")
         

@@ -42,8 +42,13 @@ def main():
 
     if loggedIn:
         print("interaction was successful and user logged in")
-        x = input("Press 1 to proceed.")
-        clientSocket.send(send_msg.encode())
+        data = "1: List all the files from the server.\n"
+        data += "2 <path>: Upload a file to the server.\n"
+        data += "3 <filename>: Delete a file from the server.\n"
+        data += "4 <filename>: Download a file from the server.\n"
+        data += "LOGOUT: Disconnect from the server.\n"
+        data += "HELP: List all the commands."
+        
         print(clientSocket.recv(1024).decode())
 
     else:
