@@ -45,10 +45,10 @@ def file_handling(conn, addr):
                 if loggedIn:
                     CURRENT_USERS.append(username)
                     break
-            
         
+
         if loggedIn:
-            print("a user has been successfully logged in")
+            print(f"user {username} has been successfully logged in")
         else:
             print("user is not logged in and interaction was unsucessful")
         
