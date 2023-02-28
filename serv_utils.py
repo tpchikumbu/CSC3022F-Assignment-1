@@ -202,17 +202,39 @@ def delete_user(username: str):
     return True, "User has been successfully removed from the server"
 
 # file transfer methods
-def downloads(connection,address,textfileName):
-    directory,textfile = textfileName.split(' ')
+def downloads(connection, textfile):
+    #directory,textfile = textfileName.split(' ')
     print(f"Checking if the file with name {textfile} exists")
-    if(os.path.exists(textfile)):
+    if(os.path.exists(f"./serverfiles/{textfile}")):
         print(f"File {textfile} exixts!")
-        print(f"Downloading file {textfile} into directory {directory}")
-        file = open(f"./serverfiles/{textfile}","r")
-        data=file.read()
+        print(f"Downloading file {textfile} into directory ") #directory decided by client
+        out_file = open(f"./serverfiles/{textfile}","rb") #changed to rb so no need to encode
+        
+        #added stuff for progress bar and sending of all filetypes
+        out_file_size = os.path.getsize(f"./serverfiles/{textfile}")
+        connection.send(str(out_file_size).encode()) #send filesize so client knows how many bytes to expect
+        bar = tqdm(range(out_file_size), f"Sending {textfile}", unit ="B", unit_scale=True, unit_divisor = 1024)
+        while True:
+            data = out_file.read(4096)
+            if not data:
+                connection.sendal(bytes("EOF".encode()))
+                break
+
+            connection.sendall(data)
+            bar.update(len(data))
+
+        out_file.close()
+
+        #reply = (connection.recv(1024).decode())
+        #print(reply)
+        #connection.send("Ending download".encode())
+        """
+        data=out_file.read()
         connection.send(data.encode("utf-8"))
-        file.close()
+        out_file.close()
         print("File has been sent!")
+        """
+        
     else:
         print(f"The file under the name {textfile} does not exist")
 
