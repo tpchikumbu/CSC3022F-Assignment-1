@@ -48,6 +48,7 @@ def file_handling(conn, addr):
         
 
         while loggedIn:
+            
             data = str(conn.recv(1024).decode())
             data = data.split("\t")
 
