@@ -4,7 +4,9 @@ from socket import *
 import serv_utils
 CURRENT_USERS = []
 
+
 def main () : 
+
     print("Starting...")
     serverSocket = socket(AF_INET, SOCK_STREAM)
     serverSocket.bind((gethostbyname(gethostname()),serverPort))
@@ -22,7 +24,7 @@ def file_handling(conn, addr):
         print(f"Connected by {addr}")
         loggedIn = False
         handshake = False
-        
+        conn.send("OK\t Welcome to the File uploading server ")
         #logging in
         # should receive msg like LOGIN\tusername\tpassword
         for i in range(1,4):
@@ -46,12 +48,23 @@ def file_handling(conn, addr):
             
         
         if loggedIn:
-            print("a user has been successfully logged in")
+            print("A user has been successfully logged in")
+            recv_msg = conn.recv(1024).decode()
+            if(recv_msg=="1"):
+                data = "OK@"
+                data += "1: List all the files from the server.\n"
+                data += "2 <path>: Upload a file to the server.\n"
+                data += "3 <filename>: Delete a file from the server.\n"
+                data += "4 <filename>: Download a file from the server.\n"
+                data += "LOGOUT: Disconnect from the server.\n"
+                data += "HELP: List all the commands."
+                conn.sendall(data.encode())
+
         else:
             print("user is not logged in and interaction was unsucessful")
         
-        recv_msg = conn.recv(1024).decode()
-        print(recv_msg)
+        # recv_msg = conn.recv(1024).decode()
+        # print(recv_msg)
                     
 
 

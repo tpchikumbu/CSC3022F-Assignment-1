@@ -9,7 +9,8 @@ def main():
     clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     clientSocket.connect((serverName,serverPort))
     addr = socket.gethostbyname(socket.gethostname())
-
+    message = clientSocket.recv(1024).decode()
+    print(message)
     loggedIn = False
     handshake = False
     send_msg = "client ready"
@@ -36,6 +37,10 @@ def main():
 
     if loggedIn:
         print("interaction was successful and user logged in")
+        x = input("Press 1 to proceed.")
+        clientSocket.send(send_msg.encode())
+        print(clientSocket.recv(1024).decode())
+
     else:
         print("user is not logged in and interaction was unsucessful")
     
@@ -44,25 +49,41 @@ def main():
     clientSocket.send(send_msg.encode())
     clientSocket.close()
 
-    if ("not" not in return_message):
-        down = input("Do you want to download the file (y/n)\n")
-        if down:
-            clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            clientSocket.connect((serverName,serverPort))
 
-            message = "hello " + filename
-            clientSocket.send(message.encode())
+
+
+
+
+
+
+
+
+
+
+
+
+    # if ("not" not in return_message):
+    #     down = input("Do you want to download the file (y/n)\n")
+    #     if down:
+    #         clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    #         clientSocket.connect((serverName,serverPort))
+
+    #         message = "hello " + filename
+    #         clientSocket.send(message.encode())
             
             
-            if not os.path.isdir("./downloads"): os.mkdir("./downloads")
-            # implement getting file from the server
-            file = open(f"./downloads/{filename}", "w")
+    #         if not os.path.isdir("./downloads"): os.mkdir("./downloads")
+    #         # implement getting file from the server
+    #         file = open(f"./downloads/{filename}", "w")
 
-            data = clientSocket.recv(1024).decode("utf-8")
-            file.write(data)
+    #         data = clientSocket.recv(1024).decode("utf-8")
+    #         file.write(data)
 
-            file.close()
+    #         file.close()
 
-            print("File received!")
+    #         print("File received!")
 
-            clientSocket.close()
+    #         clientSocket.close()
+
+if __name__ == "__main__":
+    main()

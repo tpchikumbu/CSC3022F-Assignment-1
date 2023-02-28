@@ -3,7 +3,7 @@ import os.path
 from time import time
 import os
 import sys
-from hashlib import md5from tqdm import tqdm
+from tqdm import tqdm
 
 
 FORMAT = "utf-8"
