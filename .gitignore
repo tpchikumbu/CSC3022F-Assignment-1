@@ -1,0 +1,6 @@
+downloads/*
+serverfiles/*
+*.key
+users.txt
+users.bin
+
