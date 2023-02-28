@@ -3,8 +3,13 @@ import os
 import socket
 
 def main():
-    serverName = "196.24.132.49"
-    serverPort = 50000
+    serverName = "localhost"
+    serverPort = 4000
+    
+    ip = input("Enter \"IP port\" of server. Leave blank to use \'localhost\' and port 4000\n")
+    if (ip):
+        serverName, serverPort = ip.split(" ")
+        serverPort = int(serverPort)
 
     clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     clientSocket.connect((serverName,serverPort))
