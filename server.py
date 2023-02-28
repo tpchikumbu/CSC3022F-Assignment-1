@@ -47,10 +47,17 @@ def file_handling(conn, addr):
                     break
         
 
-        if loggedIn:
-            print(f"user {username} has been successfully logged in")
-        else:
-            print("user is not logged in and interaction was unsucessful")
+        while loggedIn:
+            data = str(conn.recv(1024).decode())
+            data = data.split("\t")
+
+            if data[0] == "VIEW":
+                print("View files")
+                serv_utils.viewFiles(conn)
+                conn.recv(1024).decode()
+                conn.send("Process done.".encode())
+            else:
+                continue
         
         recv_msg = conn.recv(1024).decode()
         print(recv_msg)

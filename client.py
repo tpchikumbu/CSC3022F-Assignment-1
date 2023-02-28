@@ -4,7 +4,7 @@ import socket
 
 def main():
     serverName = "localhost"
-    serverPort = 4000
+    serverPort = 50000
     
     ip = input("Enter \"IP port\" of server. Leave blank to use \'localhost\' and port 4000\n")
     if (ip):
@@ -38,6 +38,24 @@ def main():
             print(recv_args[1])
             loggedIn = True
             break
+    
+    # present the menu to client
+    while loggedIn:
+        print_menu()
+        user_input = input("Enter the number of the option: ")
+        if user_input == "1":
+            send_msg = "VIEW\t"
+            clientSocket.send(send_msg.encode())
+            
+            recv_msg = clientSocket.recv(1024).decode()
+            recv_args = recv_msg.split("@")
+            if recv_args[0] == "OK":
+                print(recv_args[1])
+                send_msg = "OK@received files"
+            else:
+                send_msg = "NOTOK@file not received properly"
+        else:
+            continue
 
     if loggedIn:
         print("interaction was successful and user logged in")
