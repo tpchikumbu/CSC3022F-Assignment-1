@@ -202,7 +202,7 @@ def delete_user(username: str):
     return True, "User has been successfully removed from the server"
 
 # file transfer methods
-def downloads(connection, textfile):
+def download(connection, textfile):
     print(f"Checking if the file with name {textfile} exists")
     if(os.path.exists(f"./serverfiles/{textfile}")):
         print(f"File {textfile} exixts!")
@@ -210,15 +210,19 @@ def downloads(connection, textfile):
         out_file = open(f"./serverfiles/{textfile}","rb") #changed to rb so no need to encode
         
         #added stuff for progress bar and sending of all filetypes
+
+        # sends the file size so that the client can prepare the space
         out_file_size = os.path.getsize(f"./serverfiles/{textfile}")
-        connection.send(str(out_file_size).encode()) #send filesize so client knows how many bytes to expect
+        send_msg = "TRANSMITTING\t" + str(out_file_size)
+        connection.send(send_msg.encode()) #send filesize so client knows how many bytes to expect
+        
+        
         status = connection.recv(1024).decode()
         if status == "OK":
             bar = tqdm(range(out_file_size), f"Sending {textfile}", unit ="B", unit_scale=True, unit_divisor = 1024)
             while True:
                 data = out_file.read(4096)
                 if not data:
-                    connection.sendall(bytes("EOF".encode()))
                     break
 
                 connection.sendall(data)
@@ -235,9 +239,12 @@ def downloads(connection, textfile):
         out_file.close()
         print("File has been sent!")
         """
-        
+        return out_file_size
     else:
+        send_msg = f"NOTTRANSMITTING\tFile: {textfile} could not be found"
+        connection.send(send_msg.encode())
         print(f"The file under the name {textfile} does not exist")
+        return -1
 
 def viewFiles(server_data_files):
     """
@@ -277,13 +284,16 @@ def upload (connection, filename, filesize):
     bar = tqdm(range(filesize), f"Receiving {filename}", unit="B", unit_scale=True, unit_divisor=1024)
     upload_file = open(f"./serverfiles/{filename}", "wb")
     while True:
-        filedata = connection.recv(4096)
-        if not filedata:
+        received_bytes = bar.n
+        if received_bytes >= filesize:
             break
+
+        filedata = connection.recv(4096)
         upload_file.write(filedata)
         bar.update(len(filedata))
+
     upload_file.close() 
-    if(os.path.exists(f"./serverfiles/{textfile}")):
+    if(os.path.exists(f"./serverfiles/{filename}")):
         connection.send("OK\tFile has been successfully uploaded.".encode())
         print("Successfully uploaded.")
     else:

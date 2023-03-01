@@ -36,7 +36,7 @@ def main():
         clientSocket.close()
         return
     
-    print(f"SERVER: {recv_args[1]}")
+    print(f"[SERVER]: {recv_args[1]}")
     
 
 ## LOG IN PROTOCOL
@@ -68,6 +68,8 @@ def main():
     while loggedIn:
         print_menu()
         user_input = input("Enter the number of the option: \n")
+        
+## VIEW FILES Option
         if user_input == "1": #view files
             # sends a message to the server that it want's to view all files
             send_msg = "VIEW\tall"
@@ -84,7 +86,7 @@ def main():
                 print(recv_args[1])
 
             print("\nViewing files ends here\n\n")
-            
+# DOWNLOAD FILES OPTION 
         elif user_input == "2": #download files
             filename = input("Enter the name of the file to be downloaded\n")
             send_msg = "DOWNLOAD\t"+filename
@@ -92,22 +94,38 @@ def main():
 
             #added stuff for progress bar and sending of all filetypes
             # this will send the size that the user must be ready to recieve 
-            filesize = int(clientSocket.recv(1024).decode())
-            clientSocket.send("OK".encode()) 
-            bar = tqdm.tqdm(range(filesize), f"Receiving {filename}", unit="B", unit_scale=True, unit_divisor=1024)
-            in_file = open(f"./downloads/down_{filename}", "wb")
-            while True:
-                received_bytes = bar.n
-                if received_bytes >= filesize:
-                    in_file.close()
-                    break
-                message = clientSocket.recv(4096) #can't tell when entire file has been downloaded
-            
-                in_file.write(message)
-                bar.update(len(message))
+            recv_msg = clientSocket.recv(1024).decode()
+            recv_args = recv_msg.split("\t")
+            if recv_args[0] == "TRANSMITTING":
+                filesize = int(recv_args[1])
+                clientSocket.send("OK".encode()) 
+                bar = tqdm.tqdm(range(filesize), f"Receiving {filename}", unit="B", unit_scale=True, unit_divisor=1024, leave=False)
+                in_file = open(f"./downloads/down_{filename}", "wb")
+                while True:
+                    received_bytes = bar.n
+                    if received_bytes >= filesize:
+                        in_file.close()
+                        break
 
-            if(os.path.exists("./downloads/down_{filename}")):
-                clientSocket.send("SUCCESSFUL".encode())
+                    message = clientSocket.recv(4096) #can't tell when entire file has been downloaded
+                
+                    in_file.write(message)
+                    bar.update(len(message))
+
+                if(os.path.exists(f"./downloads/down_{filename}")):
+                    in_file_size = os.path.getsize(f"./downloads/down_{filename}")
+                    send_msg = "RECEIVED\t" + str(in_file_size)
+                    clientSocket.send(send_msg.encode())
+                else:
+                    send_msg = "NOTRECEIVED\tFile was not received"
+                    clientSocket.send(send_msg.encode())
+                
+                recv_msg = clientSocket.recv(1024).decode()
+                recv_args = recv_msg.split("\t")
+                print(f"\n[SERVER]:{recv_args[1]}")
+            else:
+                print(recv_args[1])
+
 
         elif user_input == "3":
           send_msg = "UPLOAD\t"
@@ -116,19 +134,27 @@ def main():
           filename = input("Specify the file name: ")
           send_msg += filename +"\t"
           directory = os.path.dirname(filedirectory)
-          full_path = os.path.join(directory,filename)
-          send_msg += os.path.getsize(full_path) +"\t"
+        #   full_path = os.path.join(directory,filename)
+          full_path = f"./{filedirectory}/{filename}"
+          send_msg += str(os.path.getsize(full_path)) +"\t"
           clientSocket.send(send_msg.encode())
-          clientSocket.send(send_msg.encode())
+        #   clientSocket.send(send_msg.encode())0
           print(clientSocket.recv(1024).decode())
-          with open(full_path) as file:
-            data = file.read()
+
+          with open(full_path, "rb") as f:
+            while True:
+                data = f.read()
+                if not data:
+                    break
+
+                clientSocket.sendall(data)
+
         # sending the file to be uploaded to the server 
-          clientSocket.send(data.encode())
+        #   clientSocket.send(data)
           message = clientSocket.recv(1024).decode().split("\t")
           cmd = message[0]
           msg = message[1]
-          if(clientSocket.recv(1024).decode().split("\t")[0]=="OK"):
+          if(cmd=="OK"):
             print(f"{msg}")
           else:
             print(f"{msg}")

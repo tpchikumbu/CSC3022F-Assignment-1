@@ -89,16 +89,39 @@ def file_handling(conn, addr):
             elif data[0]=="DOWNLOAD":
                 print("Download Files")
                 #data[1] : the user file name
-                serv_utils.downloads(conn,data[1])
-                if(conn.recv(1024).decode()=="SUCCESSFUL"):
-                    print("File download onto clients side was successful")
-                    conn.send("Process done.".encode())
-            if data[0] == "UPLOAD":
+                # download function now returns the filesize and -1 if the file was not found
+                out_file_size = serv_utils.download(conn,data[1])
+
+                # if the file was not found it just continues
+                if out_file_size != -1:
+                    recv_msg = conn.recv(1024).decode()
+                    recv_args = recv_msg.split("\t")
+
+                    if(recv_args[0]=="RECEIVED"):
+                        in_file_size = int(recv_args[1])
+                        send_msg = "OK\t"
+                        if in_file_size==out_file_size:
+                            send_msg += "File was fully sent"
+                            print(f"File {data[1]} was sent to {addr}")
+                        else:
+                            send_msg += "File was sent partially"
+                            print(f"File {data[1]} was sent to {addr} partially")
+                        
+                        conn.send(send_msg.encode())
+                    else:
+                        send_msg = "NOTOK\tFile might have been lost"
+                        conn.send(send_msg.encode())
+
+            elif data[0] == "UPLOAD":
+                # recv_msg = conn.recv(1024).decode()
                 # uploading files onto the server
                 print("UPLOADING FILE TO THE SERVER")
                 # recieving the message from the user 
                 conn.send("Uploading file to the server".encode())
-                serv_utils.upload(conn,filename=recv_msg.split('\t')[2],filesize=int(recv_msg.split('\t')[3]))
+                serv_utils.upload(conn,filename=data[2],filesize=int(data[3]))
+            
+            else:
+                pass
 
 
 if __name__ == "__main__":
