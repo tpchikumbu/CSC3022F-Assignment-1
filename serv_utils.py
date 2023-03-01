@@ -212,7 +212,7 @@ def downloads(connection, textfile):
         #added stuff for progress bar and sending of all filetypes
         out_file_size = os.path.getsize(f"./serverfiles/{textfile}")
         connection.send(str(out_file_size).encode()) #send filesize so client knows how many bytes to expect
-        status = connection.recv(decode())
+        status = connection.recv(1024).decode()
         if status == "OK":
             bar = tqdm(range(out_file_size), f"Sending {textfile}", unit ="B", unit_scale=True, unit_divisor = 1024)
             while True:

@@ -89,14 +89,15 @@ def main():
             bar = tqdm.tqdm(range(filesize), f"Receiving {filename}", unit="B", unit_scale=True, unit_divisor=1024)
             in_file = open(f"./downloads/down_{filename}", "wb")
             while True:
-                message = clientSocket.recv(4096) #can't tell when entire file has been downloaded
-                end = bytes("EOF".encode())
-                if message == end:
+                received_bytes = bar.n
+                if received_bytes >= filesize:
+                    in_file.close()
                     break
+                message = clientSocket.recv(4096) #can't tell when entire file has been downloaded
+            
                 in_file.write(message)
                 bar.update(len(message))
-            # cloe the file 
-            in_file.close()
+
             if(os.path.exists("./downloads/down_{filename}")):
                 clientSocket.send("SUCCESSFUL".encode())
 
