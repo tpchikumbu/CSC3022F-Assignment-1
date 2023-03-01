@@ -275,7 +275,7 @@ def upload (connection, filename, filesize):
         upload_file.write(filedata)
         bar.update(len(filedata))
     upload_file.close() 
-    if(os.path.exists(f"./serverfiles/{textfile}"))
+    if(os.path.exists(f"./serverfiles/{textfile}")):
         connection.send("OK\tFile has been successfully uploaded.".encode())
         print("Successfully uploaded.")
     else:
