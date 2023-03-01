@@ -72,6 +72,7 @@ def file_handling(conn, addr):
             data = str(conn.recv(1024).decode())
             data = data.split("\t")
 
+#VIEW FUNCTIONALITY
             if data[0] == "VIEW":
                 print("View files")
                 file_request = serv_utils.viewFiles(server_data_files="serverfiles")
@@ -85,12 +86,26 @@ def file_handling(conn, addr):
                     print(f"Successfully sent file list to {addr}")
                 else:
                     print("Error encounted acquiring file list")
-            
+
+# DOWNLOAD FUNCTIONALITY
             elif data[0]=="DOWNLOAD":
                 print("Download Files")
                 #data[1] : the user file name
                 # download function now returns the filesize and -1 if the file was not found
-                out_file_size = serv_utils.download(conn,data[1])
+                file_request = serv_utils.check_for_file(data[1])
+                
+                if file_request[0]:
+                    file_password = file_request[1][1]
+                    if file_password:
+                        conn.send(f"LOCKED\tThe file: {file_request[1][0]} is password protected".encode())
+                        recv_msg = conn.recv(1024).decode()
+                        recv_args = recv_msg.split("\t")
+                        if recv_args[0] == "PASSWORD":
+                            if recv_args[1] != file_password:
+                                conn.send("NOTOK\tPassword incorrect. Request terminated.")
+                                continue
+
+                out_file_size = serv_utils.download(conn, data[1])
 
                 # if the file was not found it just continues
                 if out_file_size != -1:

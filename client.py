@@ -96,6 +96,19 @@ def main():
             # this will send the size that the user must be ready to recieve 
             recv_msg = clientSocket.recv(1024).decode()
             recv_args = recv_msg.split("\t")
+
+            # only happens if the file is password protected
+            if recv_args[0] == "LOCKED":
+                print(f"[SERVER]: {recv_args[1]}")
+                file_password = input("Enter the password for the file: ")
+                send_msg = "PASSWORD\t" + password
+                clientSocket.send(send_msg.encode())
+                recv_msg = clientSocket.recv(1024).decode()
+                recv_args = recv_msg.split("\t")
+                if recv_args[0] == "NOTOK":
+                    print(f"[SERVER]: {recv_args[1]}")
+                    continue
+                
             if recv_args[0] == "TRANSMITTING":
                 filesize = int(recv_args[1])
                 clientSocket.send("OK".encode()) 
