@@ -49,24 +49,33 @@ def file_handling(conn, addr):
 
         while loggedIn:
             
+            # recieving the data from the client 
             data = str(conn.recv(1024).decode())
             data = data.split("\t")
 
             if data[0] == "VIEW":
                 print("View files")
-                serv_utils.viewFiles(conn)
-                conn.recv(1024).decode()
-                conn.send("Process done.".encode())
-            elif data[0] == "DOWNLOAD":
-                print("Download request:") #add ip for logging
+                serv_utils.viewFiles(conn,server_data_files="serverfiles")
+                conn.recv(1024).decode() # getting the user input
+                if(conn.recv(1024).decode().split("\t")[0]=="OK"):
+                    conn.send("Process done.".encode())
+                    print("View files: OK")
+                else:
+                    conn.send("Process failed.".encode())
+                    print("View files: Failed")
+            elif data[0]=="DOWNLOAD":
+                print("Download Files")
+                #data[1] : the user file name
                 serv_utils.downloads(conn,data[1])
-            else:
-                continue
-        
-        # recv_msg = conn.recv(1024).decode()
-        # print(recv_msg)
-                    
-
+                if(conn.recv(1024).decode()=="SUCCESSFUL"):
+                    print("File download onto clients side was successful")
+                    conn.send("Process done.".encode())
+            if data[0] == "UPLOAD":
+                # uploading files onto the server
+                print("UPLOADING FILE TO THE SERVER")
+                # recieving the message from the user 
+                conn.send("Uploading file to the server".encode())
+                serv_utils.upload(conn,filename=recv_msg.split('\t')[2],filesize=int(recv_msg.split('\t')[3]))
 
 
 if __name__ == "__main__":

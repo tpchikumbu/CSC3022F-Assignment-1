@@ -49,7 +49,6 @@ def main():
         if user_input == "1": #view files
             send_msg = "VIEW\t"
             clientSocket.send(send_msg.encode())
-            
             recv_msg = clientSocket.recv(1024).decode()
             recv_args = recv_msg.split("\t")
             if recv_args[0] == "OK":
@@ -57,13 +56,16 @@ def main():
                 send_msg = "OK\treceived files"
             else:
                 send_msg = "NOTOK\tfile not received properly"
+            
         elif user_input == "2": #download files
             filename = input("Enter the name of the file to be downloaded\n")
             send_msg = "DOWNLOAD\t"+filename
             clientSocket.send(send_msg.encode()) #implement specifying download directory
 
             #added stuff for progress bar and sending of all filetypes
+            # this will send the size that the user must be ready to recieve 
             filesize = int(clientSocket.recv(1024).decode())
+            clientSocket.send("OK".encode()) 
             bar = tqdm.tqdm(range(filesize), f"Receiving {filename}", unit="B", unit_scale=True, unit_divisor=1024)
             in_file = open(f"./downloads/down_{filename}", "wb")
             while True:
@@ -71,15 +73,40 @@ def main():
                 end = bytes("EOF".encode())
                 if message == end:
                     break
-
                 in_file.write(message)
                 bar.update(len(message))
-
+            # cloe the file 
             in_file.close()
-            #send_msg = "Downloaded"
+            if(os.path.exists("./downloads/down_{filename}")):
+                clientSocket.send("SUCCESSFUL".encode())
 
         elif user_input == 3:
-            print("Upload")
+          send_msg = "UPLOAD\t"
+          filedirectory= input("Specify the file directory: ")
+          send_msg += filedirectory +"\t"
+          filename = input("Specify the file name: ")
+          send_msg += filename +"\t"
+          directory = os.path.dirname(filedirectory)
+          full_path = os.path.join(directory,filename)
+          send_msg += os.path.getsize(full_path) +"\t"
+          clientSocket.send(send_msg.encode())
+          clientSocket.send(send_msg.encode())
+          print(clientSocket.recv(1024).decode())
+          with open(full_path) as file:
+            data = file.read()
+        # sending the file to be uploaded to the server 
+          clientSocket.send(data.encode())
+          message = clientSocket.recv(1024).decode().split("\t")
+          cmd = message[0]
+          msg = message[1]
+          if(clientSocket.recv(1024).decode().split("\t")[0]=="OK"):
+            print(f"{msg}")
+          else:
+            print(f"{msg}")
+
+
+
+
 
         elif user_input == 4:
             print("Log Out")

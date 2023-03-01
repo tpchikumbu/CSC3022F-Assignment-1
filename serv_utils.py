@@ -203,7 +203,6 @@ def delete_user(username: str):
 
 # file transfer methods
 def downloads(connection, textfile):
-    #directory,textfile = textfileName.split(' ')
     print(f"Checking if the file with name {textfile} exists")
     if(os.path.exists(f"./serverfiles/{textfile}")):
         print(f"File {textfile} exixts!")
@@ -213,17 +212,19 @@ def downloads(connection, textfile):
         #added stuff for progress bar and sending of all filetypes
         out_file_size = os.path.getsize(f"./serverfiles/{textfile}")
         connection.send(str(out_file_size).encode()) #send filesize so client knows how many bytes to expect
-        bar = tqdm(range(out_file_size), f"Sending {textfile}", unit ="B", unit_scale=True, unit_divisor = 1024)
-        while True:
-            data = out_file.read(4096)
-            if not data:
-                connection.sendal(bytes("EOF".encode()))
-                break
+        status = connection.recv(decode())
+        if status == "OK":
+            bar = tqdm(range(out_file_size), f"Sending {textfile}", unit ="B", unit_scale=True, unit_divisor = 1024)
+            while True:
+                data = out_file.read(4096)
+                if not data:
+                    connection.sendall(bytes("EOF".encode()))
+                    break
 
-            connection.sendall(data)
-            bar.update(len(data))
+                connection.sendall(data)
+                bar.update(len(data))
 
-        out_file.close()
+            out_file.close()
 
         #reply = (connection.recv(1024).decode())
         #print(reply)
@@ -238,11 +239,45 @@ def downloads(connection, textfile):
     else:
         print(f"The file under the name {textfile} does not exist")
 
-def viewFiles(connection):
-        files = os.listdir("serverfiles")
-        send_data = "OK@"
-        if len(files) == 0:
-            send_data += "The server directory is empty"
-        else:
-            send_data += "\n".join(f for f in files)
-        connection.send(send_data.encode(FORMAT))
+def viewFiles(connection,server_data_files):
+         """
+        Method to view the files in a server. Under the server directory.
+        params:
+            connection: The connection with the server
+            server_data_files: The directory where all the files are stored
+        Connects to the client and sends the files in the directory. 
+        """
+         files = os.listdir(server_data_files)
+         send_data_user = "OK\t" # this will be a decoding mechanism that the user will use
+         if len(files) == 0:
+            send_data_user += "The server directory is empty"
+         else:
+            send_data_user += "\n".join(f for f in files) # listing the files in the directory 
+         connection.send(send_data_user.encode(FORMAT))
+
+def upload (connection, filename, filesize):
+    """
+        Method to upload the files to the server, under the client directory directory.
+        params:
+            socket: The connection with the client
+            name: The directory where all the files are stored and the name of the file. 
+            size: size used for the tqdm bar update
+        Connects to the client, retrieves the files that they want to upload and uploads the files to the
+        specified directory 
+    """
+    # displaying on the cmd to show the progress of uploading the files
+    bar = tqdm(range(filesize), f"Receiving {filename}", unit="B", unit_scale=True, unit_divisor=1024)
+    upload_file = open(f"./serverfiles/{filename}", "wb")
+    while True:
+        filedata = connection.recv(4096)
+        if not filedata:
+            break
+        upload_file.write(filedata)
+        bar.update(len(filedata))
+    upload_file.close() 
+    if(os.path.exists(f"./serverfiles/{textfile}"))
+        connection.send("OK\tFile has been successfully uploaded.".encode())
+        print("Successfully uploaded.")
+    else:
+        connection.send("NOTOK\tFile has not been successfully uploaded.".encode())
+        print("File upload has failed.")
