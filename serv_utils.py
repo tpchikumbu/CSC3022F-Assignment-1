@@ -4,6 +4,7 @@ from time import time
 import os
 import sys
 from tqdm import tqdm
+import json
 
 
 FORMAT = "utf-8"
@@ -246,6 +247,82 @@ def download(connection, textfile):
         print(f"The file under the name {textfile} does not exist")
         return -1
 
+def check_for_file(filename):
+    try:
+        with open("files.json", "r") as files:
+            files_dict = json.load(files)
+            # print(files_dict)
+            if filename in files_dict:
+                return [True, [filename, files_dict[filename]]]
+    except Exception as e:
+        print(e)
+    
+    return [False, []]
+
+def add_file(filename, password):
+    """
+    Adds a file along with it's password to the files.json file
+    if there is no files.json then it creates it and adds the current file
+
+    Returns True if the file has been added to the files list
+    Returns False if the filename is already in the directory or if there was an error
+    """
+    if os.path.isfile("files.json"):  
+        files_list = os.listdir("serverfiles")
+        if check_for_file(filename)[0]:
+            return False
+        try:
+            with open("files.json", "r+") as files:
+                files_dict = json.load(files)
+
+                files_dict[filename] = password
+                files.seek(0)
+                json.dump(files_dict, files)
+
+            return True
+        except Exception as e:
+            print(e)
+            return False
+    else:
+        with open("files.json", "w") as files:
+            files_dict = {}
+            files_dict[filename] = password
+
+            json.dump(files_dict, files)
+        
+        return True
+
+
+def update_files():
+    """
+    Looks in the server files and adds files that are not in files.json as open files
+    """
+
+    serv_dir = os.listdir("serverfiles")
+
+    for i in serv_dir:
+        if not check_for_file(i)[0]:
+            add_file(i, "")
+
+    return
+
+def get_files():
+    """
+    Returns the files in the directory as a string with the the filename+status+\\n
+    """
+    update_files()
+    out_str = ""
+    with open("files.json", "r") as f:
+        files_dict = json.load(f)
+    
+    for filename in files_dict:
+        if files_dict[filename]:
+            out_str += filename + "|password-protected\n"
+        else:
+            out_str += filename + "|open\n"
+    
+    return out_str
+
 def viewFiles(server_data_files):
     """
     Method to view the files in a server. Under the server directory.
@@ -260,7 +337,8 @@ def viewFiles(server_data_files):
         if len(files) == 0:
             send_data_user += "The server directory is empty"
         else:
-            send_data_user += "\n".join(f for f in files) # listing the files in the directory
+            # send_data_user += "\n".join(f for f in files) # listing the files in the directory
+            send_data_user += get_files()
         
         return [True, send_data_user]
     except Exception as e:
@@ -299,3 +377,7 @@ def upload (connection, filename, filesize):
     else:
         connection.send("NOTOK\tFile has not been successfully uploaded.".encode())
         print("File upload has failed.")
+
+
+if __name__=="__main__":
+    print(get_files())
