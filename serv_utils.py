@@ -303,6 +303,20 @@ def update_files():
     for i in serv_dir:
         if not check_for_file(i)[0]:
             add_file(i, "")
+    
+    with open("files.json", "r") as files:
+        files_dict = json.load(files)
+
+    delete_keys = []
+    for key in files_dict:
+        if key not in serv_dir:
+            delete_keys.append(key)
+            
+    for key in delete_keys:
+        files_dict.pop(key)
+            
+    with open("files.json", "w") as files:
+        json.dump(files_dict, files)
 
     return
 
@@ -380,4 +394,4 @@ def upload (connection, filename, filesize):
 
 
 if __name__=="__main__":
-    print(get_files())
+    update_files()
