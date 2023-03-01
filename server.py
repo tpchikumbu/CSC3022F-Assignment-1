@@ -63,22 +63,29 @@ def file_handling(conn, addr):
                     break
         
 
+# MAIN FUNCTIONALITY
         while loggedIn:
             
             # recieving the data from the client 
+            # this is one of the options offered
+            # VIEW DOWNLOAD UPLOAD LOGOUT
             data = str(conn.recv(1024).decode())
             data = data.split("\t")
 
             if data[0] == "VIEW":
                 print("View files")
-                serv_utils.viewFiles(conn,server_data_files="serverfiles")
-                conn.recv(1024).decode() # getting the user input
-                if(conn.recv(1024).decode().split("\t")[0]=="OK"):
-                    conn.send("Process done.".encode())
-                    print("View files: OK")
+                file_request = serv_utils.viewFiles(server_data_files="serverfiles")
+                
+                # sends the file list or the error message
+                send_msg = file_request[1]
+                conn.send(send_msg.encode())
+
+                if file_request[0]:
+                    #if we've actually gotten something without a hitch
+                    print(f"Successfully sent file list to {addr}")
                 else:
-                    conn.send("Process failed.".encode())
-                    print("View files: Failed")
+                    print("Error encounted acquiring file list")
+            
             elif data[0]=="DOWNLOAD":
                 print("Download Files")
                 #data[1] : the user file name

@@ -239,21 +239,29 @@ def downloads(connection, textfile):
     else:
         print(f"The file under the name {textfile} does not exist")
 
-def viewFiles(connection,server_data_files):
-         """
-        Method to view the files in a server. Under the server directory.
-        params:
-            connection: The connection with the server
-            server_data_files: The directory where all the files are stored
-        Connects to the client and sends the files in the directory. 
-        """
-         files = os.listdir(server_data_files)
-         send_data_user = "OK\t" # this will be a decoding mechanism that the user will use
-         if len(files) == 0:
+def viewFiles(server_data_files):
+    """
+    Method to view the files in a server. Under the server directory.
+    params:
+        connection: The connection with the server
+        server_data_files: The directory where all the files are stored
+    Connects to the client and sends the files in the directory. 
+    """
+    try:
+        files = os.listdir(server_data_files)
+        send_data_user = "OK\t" # this will be a decoding mechanism that the user will use
+        if len(files) == 0:
             send_data_user += "The server directory is empty"
-         else:
-            send_data_user += "\n".join(f for f in files) # listing the files in the directory 
-         connection.send(send_data_user.encode(FORMAT))
+        else:
+            send_data_user += "\n".join(f for f in files) # listing the files in the directory
+        
+        return [True, send_data_user]
+    except Exception as e:
+        print(e)
+        return [False, "NOTOK\tUnexpected error encountered."]
+
+    return
+
 
 def upload (connection, filename, filesize):
     """

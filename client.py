@@ -62,20 +62,28 @@ def main():
             loggedIn = True
             break
     
+
+## MAIN FUNCTIONALITY
     # present the menu to client
     while loggedIn:
         print_menu()
         user_input = input("Enter the number of the option: \n")
         if user_input == "1": #view files
-            send_msg = "VIEW\t"
+            # sends a message to the server that it want's to view all files
+            send_msg = "VIEW\tall"
             clientSocket.send(send_msg.encode())
+            
+            # receives either an OK with file names
+            # or a not okay with an error message
             recv_msg = clientSocket.recv(1024).decode()
             recv_args = recv_msg.split("\t")
+
             if recv_args[0] == "OK":
                 print(recv_args[1])
-                send_msg = "OK\treceived files"
             else:
-                send_msg = "NOTOK\tfile not received properly"
+                print(recv_args[1])
+
+            print("\nViewing files ends here\n\n")
             
         elif user_input == "2": #download files
             filename = input("Enter the name of the file to be downloaded\n")
@@ -101,7 +109,7 @@ def main():
             if(os.path.exists("./downloads/down_{filename}")):
                 clientSocket.send("SUCCESSFUL".encode())
 
-        elif user_input == 3:
+        elif user_input == "3":
           send_msg = "UPLOAD\t"
           filedirectory= input("Specify the file directory: ")
           send_msg += filedirectory +"\t"
