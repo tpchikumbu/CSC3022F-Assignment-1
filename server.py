@@ -8,6 +8,7 @@ CURRENT_USERS = []
 def main () : 
 
     print("Starting...")
+    serverPort = 50000
     serverSocket = socket(AF_INET, SOCK_STREAM)
     serverSocket.bind((gethostbyname(gethostname()),serverPort))
     serverSocket.listen(1)
@@ -22,9 +23,24 @@ def main () :
 def file_handling(conn, addr):
     with conn:
         print(f"Connected by {addr}")
+
+## HANDSHAKE PROTOCOL
+        # receives handshaking protocol and sends back handshake protocol if everything is okay
+        recv_msg = conn.recv(1024).decode()
+        recv_args = recv_msg.split("\t")
+        # if not handshaked properly the connection ends there and then
+        if recv_args[0] != "HANDSHAKE":
+            conn.send("ERROR\tHandshake protocol not obeyed; ending connection".encode())
+            conn.close()
+            return
+        
+        print(f"{addr}: {recv_args[1]}")
+        send_msg = "HANDSHAKE\tConnection established securely."
+        conn.send(send_msg.encode())
+
+
+## LOG IN PROTOCOL
         loggedIn = False
-        handshake = False
-        conn.send("OK\t Welcome to the File uploading server ")
         #logging in
         # should receive msg like LOGIN\tusername\tpassword
         for i in range(1,4):

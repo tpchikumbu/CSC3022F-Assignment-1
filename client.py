@@ -4,10 +4,14 @@ import tqdm
 import os
 
 
+def print_menu():
+    print("Select a functionality to use\n1. View\n2. Download\n3. Upload")
+
 def main():
     serverName = "127.0.1.1"
     serverPort = 50000
     
+    # here the user logs in to a specific server over a specific port
     ip = input("Enter \"IP port\" of server. Leave blank to use \'localhost\' and port 50000\n")
     if (ip):
         serverName, serverPort = ip.split(" ")
@@ -15,12 +19,28 @@ def main():
 
     clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     clientSocket.connect((serverName,serverPort))
+
+    # connection is established by this point
     addr = socket.gethostbyname(socket.gethostname())
-    message = clientSocket.recv(1024).decode()
-    print(message)
+
+
+## HANDSHAKE PROTOCOLS
+    # sends a handshake protocol to establish message sending
+    send_msg = "HANDSHAKE\tTesting connection."
+    clientSocket.send(send_msg.encode())
+
+    recv_msg = clientSocket.recv(1024).decode()
+    recv_args = recv_msg.split("\t")
+    if recv_args[0] != "HANDSHAKE":
+        print(f"SERVER: {recv_msg[1]}")
+        clientSocket.close()
+        return
+    
+    print(f"SERVER: {recv_args[1]}")
+    
+
+## LOG IN PROTOCOL
     loggedIn = False
-    handshake = False
-    send_msg = "client ready"
 
     for i in range(1,4):
         username = input("Username: ")
@@ -106,69 +126,17 @@ def main():
 
 
 
-
-
         elif user_input == 4:
             print("Log Out")
         else:
             print("Invalid input")
 
         #clientSocket.send(send_msg.encode())
-
-    if loggedIn:
-        print("interaction was successful and user logged in")
-        data = "1: List all the files from the server.\n"
-        data += "2 <path>: Upload a file to the server.\n"
-        data += "3 <filename>: Delete a file from the server.\n"
-        data += "4 <filename>: Download a file from the server.\n"
-        data += "LOGOUT: Disconnect from the server.\n"
-        data += "HELP: List all the commands."
-        
-        print(clientSocket.recv(1024).decode())
-
-    else:
-        print("user is not logged in and interaction was unsucessful")
     
     send_msg = f"Client {addr} now disconnecting"
     x = input("Press enter to exit.")
     clientSocket.send(send_msg.encode())
     clientSocket.close()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    # if ("not" not in return_message):
-    #     down = input("Do you want to download the file (y/n)\n")
-    #     if down:
-    #         clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    #         clientSocket.connect((serverName,serverPort))
-
-    #         message = "hello " + filename
-    #         clientSocket.send(message.encode())
-            
-            
-    #         if not os.path.isdir("./downloads"): os.mkdir("./downloads")
-    #         # implement getting file from the server
-    #         file = open(f"./downloads/{filename}", "w")
-
-    #         data = clientSocket.recv(1024).decode("utf-8")
-    #         file.write(data)
-
-    #         file.close()
-
-    #         print("File received!")
-
-    #         clientSocket.close()
 
 if __name__ == "__main__":
     main()
