@@ -1,4 +1,5 @@
 import getpass
+import hashlib
 import socket
 import tqdm
 import os
@@ -94,9 +95,8 @@ def main():
         elif user_input == "2": #download files
             filename = input("Enter the name of the file to be downloaded\n")
             send_msg = "DOWNLOAD\t"+filename
-            clientSocket.send(send_msg.encode()) #implement specifying download directory
-
-            #added stuff for progress bar and sending of all filetypes
+            clientSocket.send(send_msg.encode()) 
+            in_hash = hashlib.md5()
             # this will send the size that the user must be ready to recieve 
             recv_msg = clientSocket.recv(1024).decode()
             recv_args = recv_msg.split("\t")
@@ -125,20 +125,27 @@ def main():
                         break
 
                     message = clientSocket.recv(4096) #can't tell when entire file has been downloaded
-                
+                    in_hash.update(message)
                     in_file.write(message)
                     bar.update(len(message))
-                if(os.path.exists(f"./downloads/down_{filename}")):
-                    in_file_size = os.path.getsize(f"./downloads/down_{filename}")
-                    send_msg = "RECEIVED\t" + str(in_file_size)
-                    clientSocket.send(send_msg.encode())
-                else:
-                    send_msg = "NOTRECEIVED\tFile was not received"
-                    clientSocket.send(send_msg.encode())
                 
-                recv_msg = clientSocket.recv(1024).decode()
-                recv_args = recv_msg.split("\t")
-                print(f"\n[SERVER]:{recv_args[1]}")
+                clientSocket.send(in_hash.hexdigest().encode())
+
+                hash_state = clientSocket.recv(1024).decode()
+                if hash_state == "OK":
+                    if(os.path.exists(f"./downloads/down_{filename}")):
+                        in_file_size = os.path.getsize(f"./downloads/down_{filename}")
+                        send_msg = "RECEIVED\t" + str(in_file_size)
+                        clientSocket.send(send_msg.encode())
+                    else:
+                        send_msg = "NOTRECEIVED\tFile was not received"
+                        clientSocket.send(send_msg.encode())
+                    
+                    recv_msg = clientSocket.recv(1024).decode()
+                    recv_args = recv_msg.split("\t")
+                    print(f"\n[SERVER]:{recv_args[1]}")
+                else:
+                    print("File invalid.")
             else:
                 print(recv_args[1])
 
