@@ -5,7 +5,7 @@ import os
 
 
 def print_menu():
-    print("Select a functionality to use\n1. View\n2. Download\n3. Upload")
+    print("Select a functionality to use\n1. View\n2. Download\n3. Upload\n4. Logout")
 
 def main():
     serverName = "127.0.1.1"
@@ -124,7 +124,6 @@ def main():
                 
                     in_file.write(message)
                     bar.update(len(message))
-
                 if(os.path.exists(f"./downloads/down_{filename}")):
                     in_file_size = os.path.getsize(f"./downloads/down_{filename}")
                     send_msg = "RECEIVED\t" + str(in_file_size)
@@ -139,7 +138,7 @@ def main():
             else:
                 print(recv_args[1])
 
-
+# UPLOADS
         elif user_input == "3":
             fileExists = False
             while not fileExists:
@@ -189,8 +188,16 @@ def main():
 
 
 
-        elif user_input == 4:
-            print("Log Out")
+        elif user_input == "4":
+            send_msg = "LOGOUT\tNow"
+            clientSocket.send(send_msg.encode())
+            
+            recv_msg = clientSocket.recv(1024).decode()
+            recv_args = recv_msg.split("\t")
+            
+            print(f"[SERVER]: {recv_args[1]}")
+            clientSocket.close()
+            break
         else:
             print("Invalid input")
 
@@ -198,8 +205,6 @@ def main():
     
     send_msg = f"Client {addr} now disconnecting"
     x = input("Press enter to exit.")
-    clientSocket.send(send_msg.encode())
-    clientSocket.close()
 
 if __name__ == "__main__":
     main()

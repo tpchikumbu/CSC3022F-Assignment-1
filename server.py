@@ -2,7 +2,7 @@ import os
 import threading
 from socket import *
 import serv_utils
-CURRENT_USERS = []
+CURRENT_USERS = {}
 
 
 def main () : 
@@ -59,7 +59,10 @@ def file_handling(conn, addr):
                 loggedIn = response[0]
                 conn.send(response[1].encode())
                 if loggedIn:
-                    CURRENT_USERS.append(username)
+                    if username in CURRENT_USERS:
+                        CURRENT_USERS[username].append(addr)
+                    else:
+                        CURRENT_USERS[username] = [addr]
                     break
         
 
@@ -72,7 +75,7 @@ def file_handling(conn, addr):
             data = str(conn.recv(1024).decode())
             data = data.split("\t")
 
-#VIEW FUNCTIONALITY
+# VIEW FUNCTIONALITY
             if data[0] == "VIEW":
                 print("View files")
                 file_request = serv_utils.viewFiles(server_data_files="serverfiles")
@@ -109,6 +112,7 @@ def file_handling(conn, addr):
 
                 # if the file was not found it just continues
                 if out_file_size != -1:
+                    
                     recv_msg = conn.recv(1024).decode()
                     recv_args = recv_msg.split("\t")
 
@@ -127,6 +131,7 @@ def file_handling(conn, addr):
                         send_msg = "NOTOK\tFile might have been lost"
                         conn.send(send_msg.encode())
 
+# UPLOAD
             elif data[0] == "UPLOAD":
                 # recv_msg = conn.recv(1024).decode()
                 # uploading files onto the server
@@ -147,8 +152,11 @@ def file_handling(conn, addr):
                 # expects a messages like UPLOAD\tfilename\tpassword\tfilesize
                 serv_utils.upload(conn, filename, password, filesize)
             
-            else:
-                pass
+            elif data[0] == "LOGOUT":
+                CURRENT_USERS[username].remove(addr)
+                conn.send("LOGOUT\tUser successfully logged out".encode())
+                conn.close()
+                break
 
 
 if __name__ == "__main__":
