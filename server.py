@@ -157,6 +157,11 @@ def file_handling(conn, addr):
                 conn.send("LOGOUT\tUser successfully logged out".encode())
                 conn.close()
                 break
+# ADMIN USER
+            elif data[0] == "ADMIN":
+                status_of_user_added= serv_utils.add_user(data[1],data[2])
+                if(status_of_user_added):
+                    conn.send("SUCCESS\tUser successfully added".encode())
 
 
 if __name__ == "__main__":
