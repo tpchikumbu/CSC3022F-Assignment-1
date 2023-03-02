@@ -1,4 +1,5 @@
 from cryptography.fernet import Fernet
+import hashlib
 import os.path
 from time import time
 import os
@@ -220,14 +221,11 @@ def download(connection, textfile):
         print(f"File {textfile} exixts!")
         print(f"Downloading file {textfile} into directory ") #directory decided by client
         out_file = open(f"./serverfiles/{textfile}","rb") #changed to rb so no need to encode
-        
-        #added stuff for progress bar and sending of all filetypes
-
+        out_hash = hashlib.md5()
         # sends the file size so that the client can prepare the space
         out_file_size = os.path.getsize(f"./serverfiles/{textfile}")
         send_msg = "TRANSMITTING\t" + str(out_file_size)
         connection.send(send_msg.encode()) #send filesize so client knows how many bytes to expect
-        
         
         status = connection.recv(1024).decode()
         if status == "OK":
@@ -236,27 +234,20 @@ def download(connection, textfile):
                 data = out_file.read(4096)
                 if not data:
                     break
-
+                out_hash.update(data)
                 connection.sendall(data)
                 bar.update(len(data))
 
             out_file.close()
 
-        #reply = (connection.recv(1024).decode())
-        #print(reply)
-        #connection.send("Ending download".encode())
-        """
-        data=out_file.read()
-        connection.send(data.encode("utf-8"))
-        out_file.close()
-        print("File has been sent!")
-        """
-        return out_file_size
+        in_hash = connection.recv(1024).decode()
+        hashed = (in_hash == out_hash.hexdigest())
+        return out_file_size,hashed
     else:
         send_msg = f"NOTTRANSMITTING\tFile: {textfile} could not be found"
         connection.send(send_msg.encode())
         print(f"The file under the name {textfile} does not exist")
-        return -1
+        return -1, False
 
 def check_for_file(filename):
     try:
