@@ -161,7 +161,7 @@ def main():
             out_filename = input("Enter the name you want to save it as on the server: ")
             file_password = input("Enter the password for the file (nothing if it's to be open): ")
 
-            # send_msg = "UPLOAD\t" + out_filename + "\t" + file_password + "\t" + file_size
+            send_msg = "UPLOAD\t" + out_filename + "\t" + file_password + "\t" + file_size
             clientSocket.send(send_msg.encode())
 
             recv_msg = clientSocket.recv(1024).decode()
