@@ -163,9 +163,12 @@ def file_handling(conn, addr):
                     break
 
                 elif data[0] == "ADMIN":
-                    status_of_user_added= serv_utils.add_user(data[1],data[2])
+                    status_of_user_added, add_msg = serv_utils.add_user(data[1],data[2], eval(data[3]))
+                    print(add_msg)
                     if(status_of_user_added):
-                        conn.send("SUCCESS\tUser successfully added".encode())
+                        conn.send(f"SUCCESS\t{add_msg}".encode())
+                    else:
+                        conn.send(f"FAILURE\t{add_msg}".encode())
         
     except ConnectionError as e:
         print(e)

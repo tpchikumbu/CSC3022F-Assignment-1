@@ -118,13 +118,21 @@ def add_user(username, passwd, isAdmin=False):
 
         with open(f"./users.bin", "wb") as f:
             f.write(all_users)
-            return True, f"User {username} has been added"
+
+        out_str = f"User {username} has been added"
+        if isAdmin: out_str += " as ADMIN"
+        else: out_str += " as REGULAR"
+        return True, out_str
     else:
         hashed += "\r\n"
         x = fernet.encrypt(hashed.encode())
         with open(f"./users.bin", "wb") as f:
             f.write(x)
-            return True, f"User {username} has been added"
+
+        out_str = f"User {username} has been added"
+        if isAdmin: out_str += " as ADMIN"
+        else: out_str += " as REGULAR"
+        return True, out_str
    
 
 def user_exists(username: str):
@@ -398,4 +406,4 @@ def upload (connection, filename, password, filesize):
 
 
 if __name__=="__main__":
-    print(add_user("just", "123", isAdmin=True))
+    print(add_user("8", "123", True))

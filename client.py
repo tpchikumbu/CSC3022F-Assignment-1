@@ -204,21 +204,32 @@ def main():
     
         #ADMIN USER
         elif user_input == "5" and isAdmin:
-            send_msg = "ADMIN\t"
+
+            print("Now adding a new user to the server")
+
+            send_msg = "ADMIN"
+            user_type_option = ""
+            while user_type_option!="1" and user_type_option!="2":
+                user_type_option = input("What type of account would you like it to be\n[1]Admin or [2]REGULAR: ")
+            
+            user_admin = "True" if user_type_option=="1" else "False"
+
             username = input("Enter the username: ")
             password = input("Enter the password:")
             password_conformation = input("Confirm the password entered: ")
-            while(not(password == password_conformation)):
+            while(password != password_conformation):
                 print("The passwords do not match.")
                 password = input("Enter the password:")
                 password_conformation = input("Confirm the password entered: ")
-            send_msg = send_msg +"\t{username}\t{password}"
+
+            send_msg = send_msg + f"\t{username}\t{password}\t{user_admin}"
             clientSocket.send(send_msg.encode())
-            recv_message= clientSocket.send(send_msg.encode())
-            if(recv_message[0]=="SUCCESS"):
-                print(recv_message[1])
+            recv_msg = clientSocket.recv(1024).decode()
+            recv_args = recv_msg.split("\t")
+            if(recv_args[0]=="SUCCESS"):
+                print(recv_args[1])
             else:
-                print(recv_message[1])
+                print(recv_args[1])
         else:
             print("Invalid input")
             
