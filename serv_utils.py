@@ -40,11 +40,11 @@ def login(username, passwd):
 
     # reading in the encryption key
     if not os.path.isfile("./users.bin"):
-        return [False, "NOTAUTH\tuser database could not be found"]
+        return [False, "NOTAUTH\tuser database could not be found", ""]
     
     fernet = get_key()
     if fernet==False:
-        return [False, "NOTAUTH\tserver file encryption error."]
+        return [False, "NOTAUTH\tserver file encryption error.", ""]
 
     # reading in the users into a list
     try:
@@ -52,7 +52,7 @@ def login(username, passwd):
             all_users = users.read()
     except Exception as e:
         print(e)
-        return [False, "NOTAUTH\tserver user file encryption error."]
+        return [False, "NOTAUTH\tserver user file encryption error.", ""]
     
     all_users_str = fernet.decrypt(all_users).decode()
     all_users_list = all_users_str.split("\r\n")
@@ -60,17 +60,20 @@ def login(username, passwd):
 
 
     for user in all_users_list:
-        u, p = user.split(",")
-        if (u==username):
-            if (p==passwd):
-                return [True, "AUTH\tUser has been logged in successfully"]
+        items = user.split(",")
+        if (items[0]==username):
+            u_type = "REGULAR"
+            if len(items) > 2:
+                u_type = items[2]
+            if (items[1]==passwd):
+                return [True, "AUTH\tUser has been logged in successfully", u_type]
             else:
-                return [False, "NOTAUTH\twrong password"]
+                return [False, "NOTAUTH\twrong password", u_type]
     
-    return [False, "NOTAUTH\tuser is not registered on the server"]
+    return [False, "NOTAUTH\tuser is not registered on the server", ""]
 
 
-def add_user(username, passwd):
+def add_user(username, passwd, isAdmin=False):
     """
     Adds a user into the server system
 
@@ -84,6 +87,7 @@ def add_user(username, passwd):
 
     # the thing that will be entered into the file
     hashed = username + "," + passwd
+    if isAdmin: hashed += ",ADMIN"
     
     # gets the hash key from the file
     fernet = get_key()
@@ -133,14 +137,13 @@ def user_exists(username: str):
     return:
         True if the user exists in the server otherwise False.
     """
-    start = time()
     # reading in the encryption key
     if not os.path.isfile("./users.bin"):
-        return False, "Error: user database could not be found"
+        return [False, "Error: user database could not be found"]
     
     fernet = get_key()
     if fernet==False:
-        return False, "Error: server encryption error."
+        return [False, "Error: server encryption error."]
 
     # reading in the users into a list
     with open("./users.bin", "rb") as users:
@@ -152,15 +155,15 @@ def user_exists(username: str):
 
 
     for user in all_users_list:
-        u, p = user.split(",")
+        items = user.split(",")
+        u = items[0]
         if (u==username):
-            end = time()
-            print(f"Time taken: {end-start} seconds")
-            return True
+            u_type = "REGULAR"
+            if len(items) > 2:
+                u_type = items[2]
+            return [True, u_type]
     
-    end = time()
-    print(f"Time taken: {end-start} seconds")
-    return False
+    return [False, ""]
 
 def delete_user(username: str):
     """
@@ -173,7 +176,7 @@ def delete_user(username: str):
         True if the user has been successfully deleted otherwise False
 
     """
-    if not user_exists(username): return False, "Error: user does not exist"
+    if not user_exists(username)[0]: return False, "Error: user does not exist"
     
     # gets the hash key from the file
     fernet = get_key()
@@ -395,4 +398,4 @@ def upload (connection, filename, password, filesize):
 
 
 if __name__=="__main__":
-    update_files()
+    print(add_user("just", "123", isAdmin=True))

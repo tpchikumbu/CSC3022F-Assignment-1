@@ -4,8 +4,11 @@ import tqdm
 import os
 
 
-def print_menu():
-    print("Select a functionality to use\n1. View\n2. Download\n3. Upload\n4. Logout")
+def print_menu(isAdmin=False):
+    if isAdmin:
+        print("Select a functionality to use\n1. View\n2. Download\n3. Upload\n4. Logout\n5. Settings")
+    else:
+        print("Select a functionality to use\n1. View\n2. Download\n3. Upload\n4. Logout")
 
 def main():
     serverName = "127.0.1.1"
@@ -59,6 +62,7 @@ def main():
             continue
         elif recv_args[0] == "AUTH":
             print(recv_args[1])
+            isAdmin = (recv_args[2] == "ADMIN")
             loggedIn = True
             break
     
@@ -66,7 +70,7 @@ def main():
 ## MAIN FUNCTIONALITY
     # present the menu to client
     while loggedIn:
-        print_menu()
+        print_menu(isAdmin)
         user_input = input("Enter the number of the option: \n")
         
 ## VIEW FILES Option
@@ -157,7 +161,7 @@ def main():
             out_filename = input("Enter the name you want to save it as on the server: ")
             file_password = input("Enter the password for the file (nothing if it's to be open): ")
 
-            send_msg = "UPLOAD\t" + out_filename + "\t" + file_password + "\t" + file_size
+            # send_msg = "UPLOAD\t" + out_filename + "\t" + file_password + "\t" + file_size
             clientSocket.send(send_msg.encode())
 
             recv_msg = clientSocket.recv(1024).decode()
@@ -187,7 +191,6 @@ def main():
                 print(f"{msg}")
 
 
-
         elif user_input == "4":
             send_msg = "LOGOUT\tNow"
             clientSocket.send(send_msg.encode())
@@ -198,6 +201,9 @@ def main():
             print(f"[SERVER]: {recv_args[1]}")
             clientSocket.close()
             break
+        
+        elif user_input == "5" and isAdmin:
+            pass
         else:
             print("Invalid input")
 
