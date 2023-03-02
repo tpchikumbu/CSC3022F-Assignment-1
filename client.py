@@ -200,6 +200,7 @@ def main():
             
             print(f"[SERVER]: {recv_args[1]}")
             clientSocket.close()
+            print(clientSocket)
             break
     
         #ADMIN USER
@@ -238,4 +239,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except ConnectionError as e:
+        print(e)
+        print("Forcefully disconnect from the server.")

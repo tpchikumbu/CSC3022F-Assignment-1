@@ -9,13 +9,34 @@ def main () :
 
     print("Starting...")
     serverPort = 50000
+    x = (input("Enter the port number (leave blank to use default 50000):\n"))
+    if x:
+        serverPort = int(x)
+    
     serverSocket = socket(AF_INET, SOCK_STREAM)
     serverSocket.bind((gethostbyname(gethostname()),serverPort))
+    print(gethostbyname(gethostname()))
     serverSocket.listen(1)
     print("The server is ready to connect.\n")
     
+    cThread = threading.Thread(target=treading_pointer, daemon=True, args=[serverSocket])
+    cThread.start()
+
     while True:
-        connectSocket, addr = serverSocket.accept()
+        admin_cmd = input("Enter 'exit()' to close the server")
+        if admin_cmd == "exit()":
+            print("Closing server now.")
+            serverSocket.close()
+            print(serverSocket)
+            return
+
+def treading_pointer(serverSocket):
+    while True:
+        try:
+            connectSocket, addr = serverSocket.accept()
+        except Exception as e:
+            print("Socket has been closed")
+            break
         cThread = threading.Thread(target=file_handling, args=(connectSocket, addr))
         cThread.start()
         print(f"[ACTIVE CONNECTIONS] {threading.active_count() - 1}\n")
