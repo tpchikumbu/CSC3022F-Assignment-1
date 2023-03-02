@@ -155,16 +155,22 @@ def file_handling(conn, addr):
 
                     # expects a messages like UPLOAD\tfilename\tpassword\tfilesize
                     serv_utils.upload(conn, filename, password, filesize)
-                
+            
                 elif data[0] == "LOGOUT":
                     CURRENT_USERS[username].remove(addr)
                     conn.send("LOGOUT\tUser successfully logged out".encode())
                     conn.close()
                     break
-    
+
+                elif data[0] == "ADMIN":
+                    status_of_user_added= serv_utils.add_user(data[1],data[2])
+                    if(status_of_user_added):
+                        conn.send("SUCCESS\tUser successfully added".encode())
+        
     except ConnectionError as e:
         print(e)
         return
+
 
 if __name__ == "__main__":
     main()

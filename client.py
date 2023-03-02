@@ -201,16 +201,30 @@ def main():
             print(f"[SERVER]: {recv_args[1]}")
             clientSocket.close()
             break
-        
+    
+        #ADMIN USER
         elif user_input == "5" and isAdmin:
-            pass
+            send_msg = "ADMIN\t"
+            username = input("Enter the username: ")
+            password = input("Enter the password:")
+            password_conformation = input("Confirm the password entered: ")
+            while(not(password == password_conformation)):
+                print("The passwords do not match.")
+                password = input("Enter the password:")
+                password_conformation = input("Confirm the password entered: ")
+            send_msg = send_msg +"\t{username}\t{password}"
+            clientSocket.send(send_msg.encode())
+            recv_message= clientSocket.send(send_msg.encode())
+            if(recv_message[0]=="SUCCESS"):
+                print(recv_message[1])
+            else:
+                print(recv_message[1])
         else:
             print("Invalid input")
+            
+            
+            
 
-        #clientSocket.send(send_msg.encode())
-    
-    send_msg = f"Client {addr} now disconnecting"
-    x = input("Press enter to exit.")
 
 if __name__ == "__main__":
     main()
