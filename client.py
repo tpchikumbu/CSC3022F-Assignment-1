@@ -12,7 +12,7 @@ def print_menu(isAdmin=False):
         print("Select a functionality to use\n1. View\n2. Download\n3. Upload\n4. Logout")
 
 def main():
-    serverName = "127.0.1.1"
+    serverName = socket.gethostbyname(socket.gethostname())
     serverPort = 50000
     
     # here the user logs in to a specific server over a specific port
@@ -168,7 +168,7 @@ def main():
             out_filename = input("Enter the name you want to save it as on the server: ")
             file_password = input("Enter the password for the file (nothing if it's to be open): ")
 
-            # send_msg = "UPLOAD\t" + out_filename + "\t" + file_password + "\t" + file_size
+            send_msg = "UPLOAD\t" + out_filename + "\t" + file_password + "\t" + file_size
             clientSocket.send(send_msg.encode())
 
             recv_msg = clientSocket.recv(1024).decode()
@@ -178,25 +178,28 @@ def main():
                 continue
             else:
                 print(f"[SERVER]: {recv_args[1]}")
-
+            out_hash = hashlib.md5()
             with open(file_path, "rb") as f:
                 while True:
                     data = f.read()
                     if not data:
                         break
-
+                    out_hash.update(data)
                     clientSocket.sendall(data)
-
+            f.close()
             # sending the file to be uploaded to the server 
             #   clientSocket.send(data)
+            clientSocket.send(out_hash.hexdigest().encode())
             message = clientSocket.recv(1024).decode().split("\t")
             cmd = message[0]
             msg = message[1]
+            
+            """
             if(cmd=="OK"):
                 print(f"{msg}")
             else:
-                print(f"{msg}")
-
+            """
+            print(f"{msg}")
 
         elif user_input == "4":
             send_msg = "LOGOUT\tNow"
