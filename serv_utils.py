@@ -362,7 +362,7 @@ def viewFiles(server_data_files):
     return
 
 
-def upload (connection, filename, filesize):
+def upload (connection, filename, password, filesize):
     """
         Method to upload the files to the server, under the client directory directory.
         params:
@@ -386,6 +386,7 @@ def upload (connection, filename, filesize):
 
     upload_file.close() 
     if(os.path.exists(f"./serverfiles/{filename}")):
+        add_file(filename, password)
         connection.send("OK\tFile has been successfully uploaded.".encode())
         print("Successfully uploaded.")
     else:

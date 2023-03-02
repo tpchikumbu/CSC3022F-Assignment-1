@@ -102,7 +102,7 @@ def file_handling(conn, addr):
                         recv_args = recv_msg.split("\t")
                         if recv_args[0] == "PASSWORD":
                             if recv_args[1] != file_password:
-                                conn.send("NOTOK\tPassword incorrect. Request terminated.")
+                                conn.send("NOTOK\tPassword incorrect. Request terminated.".encode())
                                 continue
 
                 out_file_size = serv_utils.download(conn, data[1])
@@ -132,8 +132,20 @@ def file_handling(conn, addr):
                 # uploading files onto the server
                 print("UPLOADING FILE TO THE SERVER")
                 # recieving the message from the user 
-                conn.send("Uploading file to the server".encode())
-                serv_utils.upload(conn,filename=data[2],filesize=int(data[3]))
+                filename = data[1]
+                password = data[2]
+                filesize = int(data[3])
+
+                if (serv_utils.check_for_file(filename))[0]:
+                    send_msg = f"NOTOK\tFile: {filename} already exists on server. Process ended."
+                    conn.send(send_msg.encode())
+                    continue
+                else:
+                    send_msg = "OK\tServer ready to receive the file"
+                    conn.send(send_msg.encode())
+
+                # expects a messages like UPLOAD\tfilename\tpassword\tfilesize
+                serv_utils.upload(conn, filename, password, filesize)
             
             else:
                 pass

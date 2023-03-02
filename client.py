@@ -101,7 +101,7 @@ def main():
             if recv_args[0] == "LOCKED":
                 print(f"[SERVER]: {recv_args[1]}")
                 file_password = input("Enter the password for the file: ")
-                send_msg = "PASSWORD\t" + password
+                send_msg = "PASSWORD\t" + file_password
                 clientSocket.send(send_msg.encode())
                 recv_msg = clientSocket.recv(1024).decode()
                 recv_args = recv_msg.split("\t")
@@ -141,36 +141,51 @@ def main():
 
 
         elif user_input == "3":
-          send_msg = "UPLOAD\t"
-          filedirectory= input("Specify the file directory: ")
-          send_msg += filedirectory +"\t"
-          filename = input("Specify the file name: ")
-          send_msg += filename +"\t"
-          directory = os.path.dirname(filedirectory)
-        #   full_path = os.path.join(directory,filename)
-          full_path = f"./{filedirectory}/{filename}"
-          send_msg += str(os.path.getsize(full_path)) +"\t"
-          clientSocket.send(send_msg.encode())
-        #   clientSocket.send(send_msg.encode())0
-          print(clientSocket.recv(1024).decode())
+            fileExists = False
+            while not fileExists:
+                filedirectory= input("Specify the file directory: ")
+                filedirectory = "." if not filedirectory else filedirectory
+                filename = input("Specify the file name: ")
+                file_path = f"{filedirectory}/{filename}"
+                fileExists = os.path.isfile(file_path)
+                if not fileExists:
+                    print(f"File with path '{file_path}' does not exist")
+                    print("Try again")
+                else:
+                    print(f"File '{file_path}' found")
 
-          with open(full_path, "rb") as f:
-            while True:
-                data = f.read()
-                if not data:
-                    break
+            file_size = str(os.path.getsize(file_path))
+            out_filename = input("Enter the name you want to save it as on the server: ")
+            file_password = input("Enter the password for the file (nothing if it's to be open): ")
 
-                clientSocket.sendall(data)
+            send_msg = "UPLOAD\t" + out_filename + "\t" + file_password + "\t" + file_size
+            clientSocket.send(send_msg.encode())
 
-        # sending the file to be uploaded to the server 
-        #   clientSocket.send(data)
-          message = clientSocket.recv(1024).decode().split("\t")
-          cmd = message[0]
-          msg = message[1]
-          if(cmd=="OK"):
-            print(f"{msg}")
-          else:
-            print(f"{msg}")
+            recv_msg = clientSocket.recv(1024).decode()
+            recv_args = recv_msg.split("\t")
+            if recv_args[0] == "NOTOK":
+                print(f"[SERVER]: {recv_args[1]}")
+                continue
+            else:
+                print(f"[SERVER]: {recv_args[1]}")
+
+            with open(file_path, "rb") as f:
+                while True:
+                    data = f.read()
+                    if not data:
+                        break
+
+                    clientSocket.sendall(data)
+
+            # sending the file to be uploaded to the server 
+            #   clientSocket.send(data)
+            message = clientSocket.recv(1024).decode().split("\t")
+            cmd = message[0]
+            msg = message[1]
+            if(cmd=="OK"):
+                print(f"{msg}")
+            else:
+                print(f"{msg}")
 
 
 
