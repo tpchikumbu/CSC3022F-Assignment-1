@@ -224,11 +224,14 @@ def download(connection, textfile):
         out_hash = hashlib.md5()
         # sends the file size so that the client can prepare the space
         out_file_size = os.path.getsize(f"./serverfiles/{textfile}")
-        send_msg = "TRANSMITTING\t" + str(out_file_size)
+        send_msg = "SUCCESS\tTRANSMITTING\t" + str(out_file_size)
         connection.send(send_msg.encode()) #send filesize so client knows how many bytes to expect
         
-        status = connection.recv(1024).decode()
+        recv_msg = connection.recv(1024).decode()
+        recv_args = recv_msg.split("\t")
+        status = recv_args[0]
         if status == "OK":
+            print(f"{connection.getpeername()}: {recv_args[2]}")
             bar = tqdm(range(out_file_size), f"Sending {textfile}", unit ="B", unit_scale=True, unit_divisor = 1024)
             while True:
                 data = out_file.read(4096)
@@ -242,9 +245,9 @@ def download(connection, textfile):
 
         in_hash = connection.recv(1024).decode()
         hashed = (in_hash == out_hash.hexdigest())
-        return out_file_size,hashed
+        return out_file_size, hashed
     else:
-        send_msg = f"NOTTRANSMITTING\tFile: {textfile} could not be found"
+        send_msg = f"NOTOK\tNOTTRANSMITTING\tFile: {textfile} could not be found"
         connection.send(send_msg.encode())
         print(f"The file under the name {textfile} does not exist")
         return -1, False
@@ -349,7 +352,7 @@ def viewFiles(server_data_files):
     """
     try:
         files = os.listdir(server_data_files)
-        send_data_user = "OK\t" # this will be a decoding mechanism that the user will use
+        send_data_user = "" # this will be a decoding mechanism that the user will use
         if len(files) == 0:
             send_data_user += "The server directory is empty"
         else:
@@ -359,7 +362,7 @@ def viewFiles(server_data_files):
         return [True, send_data_user]
     except Exception as e:
         print(e)
-        return [False, "NOTOK\tUnexpected error encountered."]
+        return [False, "Unexpected error encountered."]
 
     return
 

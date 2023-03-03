@@ -12,7 +12,7 @@ def print_menu(isAdmin=False):
         print("Select a functionality to use\n1. View\n2. Download\n3. Upload\n4. Logout")
 
 def main():
-    serverName = "127.0.1.1"
+    serverName = socket.gethostbyname(socket.gethostname())
     serverPort = 50000
     
     # here the user logs in to a specific server over a specific port
@@ -77,7 +77,7 @@ def main():
 ## VIEW FILES Option
         if user_input == "1": #view files
             # sends a message to the server that it want's to view all files
-            send_msg = "VIEW\tall"
+            send_msg = "OK\tVIEW\tall"
             clientSocket.send(send_msg.encode())
             
             # receives either an OK with file names
@@ -85,16 +85,16 @@ def main():
             recv_msg = clientSocket.recv(1024).decode()
             recv_args = recv_msg.split("\t")
 
-            if recv_args[0] == "OK":
-                print(recv_args[1])
+            if recv_args[0] == "SUCCESS":
+                print(f"[SERVER]: {recv_args[1]}")
             else:
-                print(recv_args[1])
+                print(f"[SERVER]: {recv_args[1]}")
 
             print("\nViewing files ends here\n\n")
 # DOWNLOAD FILES OPTION 
         elif user_input == "2": #download files
             filename = input("Enter the name of the file to be downloaded\n")
-            send_msg = "DOWNLOAD\t"+filename
+            send_msg = "OK\tDOWNLOAD\t"+filename
             clientSocket.send(send_msg.encode()) 
             in_hash = hashlib.md5()
             # this will send the size that the user must be ready to recieve 
@@ -102,20 +102,20 @@ def main():
             recv_args = recv_msg.split("\t")
 
             # only happens if the file is password protected
-            if recv_args[0] == "LOCKED":
-                print(f"[SERVER]: {recv_args[1]}")
+            if recv_args[1] == "LOCKED":
+                print(f"[SERVER]: {recv_args[2]}")
                 file_password = input("Enter the password for the file: ")
-                send_msg = "PASSWORD\t" + file_password
+                send_msg = "OK\tPASSWORD\t" + file_password
                 clientSocket.send(send_msg.encode())
                 recv_msg = clientSocket.recv(1024).decode()
                 recv_args = recv_msg.split("\t")
-                if recv_args[0] == "NOTOK":
+                if recv_args[0] == "FAILURE":
                     print(f"[SERVER]: {recv_args[1]}")
                     continue
                 
-            if recv_args[0] == "TRANSMITTING":
-                filesize = int(recv_args[1])
-                clientSocket.send("OK".encode()) 
+            if recv_args[1] == "TRANSMITTING":
+                filesize = int(recv_args[2])
+                clientSocket.send("OK\tRECEIVING\tReady to receive".encode())
                 bar = tqdm.tqdm(range(filesize), f"Receiving {filename}", unit="B", unit_scale=True, unit_divisor=1024, leave=False)
                 in_file = open(f"./downloads/down_{filename}", "wb")
                 while True:
@@ -131,23 +131,25 @@ def main():
                 
                 clientSocket.send(in_hash.hexdigest().encode())
 
-                hash_state = clientSocket.recv(1024).decode()
-                if hash_state == "OK":
+                recv_msg = clientSocket.recv(1024).decode()
+                recv_args = recv_msg.split("\t")
+                if recv_args[0] == "SUCCESS":
+                    print(f"[SERVER]: {recv_args[1]}")
                     if(os.path.exists(f"./downloads/down_{filename}")):
                         in_file_size = os.path.getsize(f"./downloads/down_{filename}")
-                        send_msg = "RECEIVED\t" + str(in_file_size)
+                        send_msg = "OK\tRECEIVED\t" + str(in_file_size)
                         clientSocket.send(send_msg.encode())
                     else:
-                        send_msg = "NOTRECEIVED\tFile was not received"
+                        send_msg = "NOTOK\tNOTRECEIVED\tFile was not received"
                         clientSocket.send(send_msg.encode())
                     
                     recv_msg = clientSocket.recv(1024).decode()
                     recv_args = recv_msg.split("\t")
-                    print(f"\n[SERVER]:{recv_args[1]}")
+                    print(f"\n[SERVER]: {recv_args[1]}")
                 else:
                     print("File invalid.")
             else:
-                print(recv_args[1])
+                print(recv_args[2])
 
 # UPLOADS
         elif user_input == "3":

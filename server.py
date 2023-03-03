@@ -7,6 +7,7 @@ CURRENT_USERS = {}
 
 def main () : 
 
+    # gets the port on which to start the server on then listens for connections
     print("Starting...")
     serverPort = 50000
     x = (input("Enter the port number (leave blank to use default 50000):\n"))
@@ -19,9 +20,12 @@ def main () :
     serverSocket.listen(1)
     print("The server is ready to connect.\n")
     
-    cThread = threading.Thread(target=treading_pointer, daemon=True, args=[serverSocket])
+
+    # starts a thread to handle multiple clients connecting on different threads
+    cThread = threading.Thread(target=threading_clients, daemon=True, args=[serverSocket])
     cThread.start()
 
+    # on the main threads it waits for the exit command to close the server
     while True:
         admin_cmd = input("Enter 'exit()' to close the server")
         if admin_cmd == "exit()":
@@ -30,8 +34,10 @@ def main () :
             print(serverSocket)
             return
 
-def treading_pointer(serverSocket):
+def threading_clients(serverSocket):
+    # keeps waiting for clients to establish connections.
     while True:
+        # the socket tries to accept a connection but breaks the loop if the server socket closes
         try:
             connectSocket, addr = serverSocket.accept()
         except Exception as e:
@@ -39,18 +45,20 @@ def treading_pointer(serverSocket):
             break
         cThread = threading.Thread(target=file_handling, args=(connectSocket, addr))
         cThread.start()
-        print(f"[ACTIVE CONNECTIONS] {threading.active_count() - 1}\n")
+        print(f"[ACTIVE CONNECTIONS] {threading.active_count() - 2}\n")
 
 def file_handling(conn, addr):
+    # this is the main function for each individual client to connect
+    # try block catches a ConnectionError in which a client unexpectedly ends connection
     try:
         with conn:
-            # isAdmin = False
             print(f"Connected by {addr}")
 
             ## HANDSHAKE PROTOCOL
             # receives handshaking protocol and sends back handshake protocol if everything is okay
             recv_msg = conn.recv(1024).decode()
             recv_args = recv_msg.split("\t")
+
             # if not handshaked properly the connection ends there and then
             if recv_args[0] != "HANDSHAKE":
                 conn.send("ERROR\tHandshake protocol not obeyed; ending connection".encode())
@@ -64,25 +72,27 @@ def file_handling(conn, addr):
 
             ## LOG IN PROTOCOL
             loggedIn = False
-            #logging in
-            # should receive msg like LOGIN\tusername\tpassword
             for i in range(1,4):
                 # the first message from the client should be a login message
+
+                # should receive msg like LOGIN\tusername\tpassword\tlog
                 recv_msg = conn.recv(1024).decode()
                 recv_args = recv_msg.split("\t")
 
                 # if the message received is not a login 
+                # every implementation of a client must try to login after handshaking
                 if recv_args[0] != "LOGIN":
                     send_msg = "ERROR\tUser must login first"
                     conn.send(send_msg.encode())
                 else:
                     username, password, log = str(recv_args[1]), str(recv_args[2]), str(recv_args[3])
-                    print(log)
+                    print(f"{log}")
                     response = serv_utils.login(username, password)
                     loggedIn = response[0]
                     send = response[1] + "\t" + response[2]
                     conn.send(send.encode())
                     if loggedIn:
+                        # there is a dictionary of current users and the addresses they are logged in from
                         isAdmin = (response[2] == "ADMIN")
                         if username in CURRENT_USERS:
                             CURRENT_USERS[username].append(addr)
@@ -97,16 +107,28 @@ def file_handling(conn, addr):
                 # recieving the data from the client 
                 # this is one of the options offered
                 # VIEW DOWNLOAD UPLOAD LOGOUT
-                data = str(conn.recv(1024).decode())
-                data = data.split("\t")
+                recv_msg = str(conn.recv(1024).decode())
+                data = recv_msg.split("\t")
+                
+                #recv_msg must be OK\tCOMMAND\tPARAMETERS
+                if data[0] == "OK":
+                    pass
+                else:
+                    #add functionality for error bounce back
+                    pass
 
-            # VIEW FUNCTIONALITY
-                if data[0] == "VIEW":
+                # VIEW FUNCTIONALITY
+                if data[1] == "VIEW":
+
                     print("View files")
                     file_request = serv_utils.viewFiles(server_data_files="serverfiles")
                     
                     # sends the file list or the error message
-                    send_msg = file_request[1]
+                    if file_request[0]:
+                        send_msg = "SUCCESS\t" + file_request[1]
+                    else:
+                        send_msg = "FAILURE\t" + file_request[1]
+
                     conn.send(send_msg.encode())
 
                     if file_request[0]:
@@ -115,54 +137,60 @@ def file_handling(conn, addr):
                     else:
                         print("Error encounted acquiring file list")
 
-            # DOWNLOAD FUNCTIONALITY
-                elif data[0]=="DOWNLOAD":
+                # DOWNLOAD FUNCTIONALITY
+                elif data[1]=="DOWNLOAD":
                     print("Download Files")
                     #data[1] : the user file name
                     # download function now returns the filesize and -1 if the file was not found
-                    file_request = serv_utils.check_for_file(data[1])
+                    filename = data[2]
+                    file_request = serv_utils.check_for_file(filename)
                     
+                    # if file request returns a negative, the file missing error will be cause by filesize
                     if file_request[0]:
+                        # gets the password from the request and communicates with the client if there is need of a password
                         file_password = file_request[1][1]
                         if file_password:
-                            conn.send(f"LOCKED\tThe file: {file_request[1][0]} is password protected".encode())
+                            conn.send(f"SUCCESS\tLOCKED\tThe file: {file_request[1][0]} is password protected".encode())
                             recv_msg = conn.recv(1024).decode()
                             recv_args = recv_msg.split("\t")
-                            if recv_args[0] == "PASSWORD":
-                                if recv_args[1] != file_password:
-                                    conn.send("NOTOK\tPassword incorrect. Request terminated.".encode())
+                            if recv_args[1] == "PASSWORD":
+                                if recv_args[2] != file_password:
+                                    conn.send("FAILURE\tNOTAUTH\tPassword incorrect. Request terminated.".encode())
                                     continue
 
-                    out_file_size, hashed = serv_utils.download(conn, data[1])
+                    out_file_size, hashed = serv_utils.download(conn, filename)
 
                     # if the file was not found it just continues
                     if out_file_size != -1:
                         if not hashed:
-                            print("ERROR: Different hash")
-                            conn.send("NOTOK".encode())
+                            print("ERROR: Opposing hash received")
+                            conn.send("FAILURE\tDifferent hashes from Client and Server.".encode())
                             break
                         else:
-                            conn.send("OK".encode())
+                            conn.send("SUCCESS\tClient and Server hashes match".encode())
+
+                        # receives a message from client detailing if the file has been received or
+                        # lost in transmission
                         recv_msg = conn.recv(1024).decode()
                         recv_args = recv_msg.split("\t")
 
-                        if(recv_args[0]=="RECEIVED"):
-                            in_file_size = int(recv_args[1])
-                            send_msg = "OK\t"
+                        if(recv_args[1]=="RECEIVED"):
+                            in_file_size = int(recv_args[2])
+                            send_msg = "SUCCESS\t"
                             if in_file_size==out_file_size:
                                 send_msg += "File was fully sent"
-                                print(f"File {data[1]} was sent to {addr}")
+                                print(f"File {filename} was sent to {addr}")
                             else:
                                 send_msg += "File was sent partially"
-                                print(f"File {data[1]} was sent to {addr} partially")
+                                print(f"File {filename} was sent to {addr} partially")
                             
                             conn.send(send_msg.encode())
                         else:
-                            send_msg = "NOTOK\tFile might have been lost"
+                            send_msg = "FAILUTE\tFile might have been lost"
                             conn.send(send_msg.encode())
 
-            # UPLOAD
-                elif data[0] == "UPLOAD":
+                # UPLOAD
+                elif data[1] == "UPLOAD":
                     # recv_msg = conn.recv(1024).decode()
                     # uploading files onto the server
                     print("UPLOADING FILE TO THE SERVER")
@@ -182,13 +210,13 @@ def file_handling(conn, addr):
                     # expects a messages like UPLOAD\tfilename\tpassword\tfilesize
                     serv_utils.upload(conn, filename, password, filesize)
             
-                elif data[0] == "LOGOUT":
+                elif data[1] == "LOGOUT":
                     CURRENT_USERS[username].remove(addr)
                     conn.send("LOGOUT\tUser successfully logged out".encode())
                     conn.close()
                     break
 
-                elif data[0] == "ADMIN":
+                elif data[1] == "ADMIN":
                     status_of_user_added, add_msg = serv_utils.add_user(data[1],data[2], eval(data[3]))
                     print(add_msg)
                     if(status_of_user_added):
