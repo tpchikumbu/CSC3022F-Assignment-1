@@ -195,9 +195,9 @@ def file_handling(conn, addr):
                     # uploading files onto the server
                     print("UPLOADING FILE TO THE SERVER")
                     # recieving the message from the user 
-                    filename = data[1]
-                    password = data[2]
-                    filesize = int(data[3])
+                    filename = data[2]
+                    password = data[3]
+                    filesize = int(data[4])
 
                     if (serv_utils.check_for_file(filename))[0]:
                         send_msg = f"NOTOK\tFile: {filename} already exists on server. Process ended."
@@ -212,17 +212,22 @@ def file_handling(conn, addr):
             
                 elif data[1] == "LOGOUT":
                     CURRENT_USERS[username].remove(addr)
-                    conn.send("LOGOUT\tUser successfully logged out".encode())
+                    conn.send("SUCCESS\tLOGOUT\tUser successfully logged out".encode())
                     conn.close()
                     break
 
                 elif data[1] == "ADMIN":
-                    status_of_user_added, add_msg = serv_utils.add_user(data[1],data[2], eval(data[3]))
-                    print(add_msg)
-                    if(status_of_user_added):
-                        conn.send(f"SUCCESS\t{add_msg}".encode())
+                    if isAdmin:
+                        status_of_user_added, add_msg = serv_utils.add_user(data[1],data[2], eval(data[3]))
+                        print(add_msg)
+                        if(status_of_user_added):
+                            conn.send(f"SUCCESS\t{add_msg}".encode())
+                        else:
+                            conn.send(f"FAILURE\t{add_msg}".encode())
                     else:
-                        conn.send(f"FAILURE\t{add_msg}".encode())
+                        conn.send("FAILURE\tERROR\tTried to access admin privileges on regular account")
+                        conn.close()
+                        break
         
     except ConnectionError as e:
         print(e)

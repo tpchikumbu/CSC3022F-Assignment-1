@@ -11,6 +11,9 @@ def print_menu(isAdmin=False):
     else:
         print("Select a functionality to use\n1. View\n2. Download\n3. Upload\n4. Logout")
 
+def print_admin_options():
+    print("ADMIN SETTINGS\n1. Add new user\n2. Delete User\nPurge System or something else")
+
 def main():
     serverName = socket.gethostbyname(socket.gethostname())
     serverPort = 50000
@@ -170,7 +173,7 @@ def main():
             out_filename = input("Enter the name you want to save it as on the server: ")
             file_password = input("Enter the password for the file (nothing if it's to be open): ")
 
-            send_msg = "UPLOAD\t" + out_filename + "\t" + file_password + "\t" + file_size
+            send_msg = "OK\tUPLOAD\t" + out_filename + "\t" + file_password + "\t" + file_size
             clientSocket.send(send_msg.encode())
 
             recv_msg = clientSocket.recv(1024).decode()
@@ -201,23 +204,25 @@ def main():
 
 
         elif user_input == "4":
-            send_msg = "LOGOUT\tNow"
+            send_msg = "OK\tLOGOUT\tNow"
             clientSocket.send(send_msg.encode())
             
             recv_msg = clientSocket.recv(1024).decode()
             recv_args = recv_msg.split("\t")
             
-            print(f"[SERVER]: {recv_args[1]}")
+            print(f"[SERVER]: {recv_args[2]}")
             clientSocket.close()
-            print(clientSocket)
+            print("Logging out now.")
             break
     
         #ADMIN USER
         elif user_input == "5" and isAdmin:
+            print_admin_options()
+            option = input("Enter the number of the option you want:")
 
             print("Now adding a new user to the server")
 
-            send_msg = "ADMIN"
+            send_msg = "OK\tADMIN"
             user_type_option = ""
             while user_type_option!="1" and user_type_option!="2":
                 user_type_option = input("What type of account would you like it to be\n[1]Admin or [2]REGULAR: ")
