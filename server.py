@@ -218,7 +218,7 @@ def file_handling(conn, addr):
 
                 elif data[1] == "ADMIN":
                     if isAdmin:
-                        status_of_user_added, add_msg = serv_utils.add_user(data[1],data[2], eval(data[3]))
+                        status_of_user_added, add_msg = serv_utils.add_user(data[2],data[3], eval(data[4]))
                         print(add_msg)
                         if(status_of_user_added):
                             conn.send(f"SUCCESS\t{add_msg}".encode())

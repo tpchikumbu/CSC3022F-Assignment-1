@@ -215,15 +215,15 @@ def delete_user(username: str):
     return True, "User has been successfully removed from the server"
 
 # file transfer methods
-def download(connection, textfile):
-    print(f"Checking if the file with name {textfile} exists")
-    if(os.path.exists(f"./serverfiles/{textfile}")):
-        print(f"File {textfile} exixts!")
-        print(f"Downloading file {textfile} into directory ") #directory decided by client
-        out_file = open(f"./serverfiles/{textfile}","rb") #changed to rb so no need to encode
+def download(connection, filename):
+    print(f"Checking if the file with name {filename} exists")
+    if(os.path.exists(f"./serverfiles/{filename}")):
+        print(f"File {filename} exixts!")
+        print(f"Downloading file {filename} into directory ") #directory decided by client
+        out_file = open(f"./serverfiles/{filename}","rb") #changed to rb so no need to encode
         out_hash = hashlib.md5()
         # sends the file size so that the client can prepare the space
-        out_file_size = os.path.getsize(f"./serverfiles/{textfile}")
+        out_file_size = os.path.getsize(f"./serverfiles/{filename}")
         send_msg = "SUCCESS\tTRANSMITTING\t" + str(out_file_size)
         connection.send(send_msg.encode()) #send filesize so client knows how many bytes to expect
         
@@ -232,7 +232,7 @@ def download(connection, textfile):
         status = recv_args[0]
         if status == "OK":
             print(f"{connection.getpeername()}: {recv_args[2]}")
-            bar = tqdm(range(out_file_size), f"Sending {textfile}", unit ="B", unit_scale=True, unit_divisor = 1024)
+            bar = tqdm(range(out_file_size), f"Sending {filename}", unit ="B", unit_scale=True, unit_divisor = 1024)
             while True:
                 data = out_file.read(4096)
                 if not data:
@@ -247,9 +247,9 @@ def download(connection, textfile):
         hashed = (in_hash == out_hash.hexdigest())
         return out_file_size, hashed
     else:
-        send_msg = f"NOTOK\tNOTTRANSMITTING\tFile: {textfile} could not be found"
+        send_msg = f"NOTOK\tNOTTRANSMITTING\tFile: {filename} could not be found"
         connection.send(send_msg.encode())
-        print(f"The file under the name {textfile} does not exist")
+        print(f"The file under the name {filename} does not exist")
         return -1, False
 
 def check_for_file(filename):
@@ -400,4 +400,4 @@ def upload (connection, filename, password, filesize):
 
 
 if __name__=="__main__":
-    print(add_user("8", "123", True))
+    print(user_exists("jasper"))
