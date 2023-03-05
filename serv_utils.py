@@ -1,11 +1,11 @@
 from cryptography.fernet import Fernet
-import hashlib
-import os.path
 from time import time
+from tqdm import tqdm
+import hashlib
+import json
+import os.path
 import os
 import sys
-from tqdm import tqdm
-import json
 
 
 FORMAT = "utf-8"
@@ -27,6 +27,7 @@ def get_key():
     fernet = Fernet(key)
     return fernet
 
+# makes a key if initiating server
 def make_key():
     """
     Method to generate an encryption key for user details.
@@ -38,6 +39,7 @@ def make_key():
     print("Key generated")
     add_user("admin", "admin", True)
 
+#logs in a user to the server
 def login(username, passwd):
     """
     Method to login users into the server.
@@ -84,7 +86,7 @@ def login(username, passwd):
     
     return [False, "NOTAUTH\tuser is not registered on the server", ""]
 
-
+#adds a new user to the user.bin file
 def add_user(username, passwd, isAdmin=False):
     """
     Adds a user into the server system
@@ -146,6 +148,7 @@ def add_user(username, passwd, isAdmin=False):
         else: out_str += " as REGULAR"
         return True, out_str
    
+
 
 def user_exists(username: str):
     """
@@ -225,7 +228,7 @@ def delete_user(username: str):
 
     return True, "User has been successfully removed from the server"
 
-# file transfer methods
+# downloads a file using a connection socket and the filename and due protocol
 def download(connection, filename):
     print(f"Checking if the file with name {filename} exists")
     if(os.path.exists(f"./serverfiles/{filename}")):
@@ -263,6 +266,7 @@ def download(connection, filename):
         print(f"The file under the name {filename} does not exist")
         return -1, False
 
+# checks if a file is in the director
 def check_for_file(filename):
     try:
         with open("files.json", "r") as files:
@@ -275,6 +279,7 @@ def check_for_file(filename):
     
     return [False, []]
 
+# adds a new file to the directory along with it's password
 def add_file(filename, password):
     """
     Adds a file along with it's password to the files.json file
@@ -308,7 +313,7 @@ def add_file(filename, password):
         
         return True
 
-
+# updates the files with the current files in the directory
 def update_files():
     """
     Looks in the server files and adds files that are not in files.json as open files
@@ -336,6 +341,7 @@ def update_files():
 
     return
 
+# gets a list of the files in the directory
 def get_files():
     """
     Returns the files in the directory as a string with the the filename+status+\\n
@@ -353,6 +359,7 @@ def get_files():
     
     return out_str
 
+# for the view function on the server
 def viewFiles(server_data_files):
     """
     Method to view the files in a server. Under the server directory.
@@ -377,7 +384,7 @@ def viewFiles(server_data_files):
 
     return
 
-
+# uploads a file using a connection socket and the filename and due protocol
 def upload (connection, filename, password, filesize):
     """
         Method to upload the files to the server, under the client directory directory.
