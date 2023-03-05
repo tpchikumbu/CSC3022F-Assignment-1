@@ -115,7 +115,8 @@ def file_handling(conn, addr):
                     pass
                 else:
                     #add functionality for error bounce back
-                    pass
+                    print("Message error")
+                    break
 
                 # VIEW FUNCTIONALITY
                 if data[1] == "VIEW":
