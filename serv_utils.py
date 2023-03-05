@@ -395,6 +395,7 @@ def upload (connection, filename, password, filesize):
     while True:
         received_bytes = bar.n
         if received_bytes >= filesize:
+            upload_file.close()
             break
 
         filedata = connection.recv(4096)
@@ -418,6 +419,7 @@ def upload (connection, filename, password, filesize):
 
 
 if __name__=="__main__":
-    make_key()
-    #print(add_user("tp", "123", isAdmin=True))
+    print("")
+    #make_key()
+    
     

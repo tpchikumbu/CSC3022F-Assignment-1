@@ -186,7 +186,7 @@ def main():
             out_hash = hashlib.md5()
             with open(file_path, "rb") as f:
                 while True:
-                    data = f.read()
+                    data = f.read(4096) #limit size being sent at once
                     if not data:
                         break
                     out_hash.update(data)
