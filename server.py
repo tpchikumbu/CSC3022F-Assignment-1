@@ -9,6 +9,10 @@ def main () :
 
     # gets the port on which to start the server on then listens for connections
     print("Starting...")
+    if not os.path.exists("filekey.key"):
+        print("No key found. Generating...")
+        serv_utils.make_key()
+    print("Encryption key found")
     serverPort = 50000
     x = (input("Enter the port number (leave blank to use default 50000):\n"))
     if x:
@@ -27,7 +31,7 @@ def main () :
 
     # on the main threads it waits for the exit command to close the server
     while True:
-        admin_cmd = input("Enter 'exit()' to close the server")
+        admin_cmd = input("Enter 'exit()' to close the server\n")
         if admin_cmd == "exit()":
             print("Closing server now.")
             serverSocket.close()

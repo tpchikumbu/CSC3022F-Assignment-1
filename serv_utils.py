@@ -27,6 +27,17 @@ def get_key():
     fernet = Fernet(key)
     return fernet
 
+def make_key():
+    """
+    Method to generate an encryption key for user details.
+    """
+    key_file = open("filekey.key", "wb")
+    key = Fernet.generate_key()
+    key_file.write(key)
+    key_file.close()
+    print("Key generated")
+    add_user("admin", "admin", True)
+
 def login(username, passwd):
     """
     Method to login users into the server.
@@ -407,6 +418,6 @@ def upload (connection, filename, password, filesize):
 
 
 if __name__=="__main__":
-    print(add_user("simba", "123",isAdmin=True))
-    print(add_user("sim", "123",isAdmin=True))
+    make_key()
+    #print(add_user("tp", "123", isAdmin=True))
     
