@@ -110,9 +110,9 @@ def add_user(username, passwd, isAdmin=False):
         all_users_list = all_users_str.split("\r\n")
 
 
-        for user in all_users_list:
-            if username in user:
-                return False, f"Error: user {username} is already registered"
+        
+        if user_exists(username)[0]:
+            return False, f"Error: user {username} is already registered"
 
         all_users_str += hashed + "\r\n"
         all_users = fernet.encrypt(all_users_str.encode())
@@ -400,4 +400,6 @@ def upload (connection, filename, password, filesize):
 
 
 if __name__=="__main__":
-    print(user_exists("jasper"))
+    print(add_user("simba", "123",isAdmin=True))
+    print(add_user("sim", "123",isAdmin=True))
+    
