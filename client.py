@@ -194,6 +194,14 @@ def main():
             f.close()
             # sending the file to be uploaded to the server 
             #   clientSocket.send(data)
+            # in_hash = clientSocket.recv(1024).decode()
+            # hashed = (in_hash == out_hash.hexdigest())
+            recv_msg = clientSocket.recv(1024).decode()
+            recv_args = recv_msg.split("\t")
+            out_filesize = str(recv_args[1])
+            if (file_size == out_filesize): print("Files are equal size")
+            else: print("Files are not equal size")
+
             clientSocket.send(out_hash.hexdigest().encode())
             message = clientSocket.recv(1024).decode().split("\t")
             cmd = message[0]

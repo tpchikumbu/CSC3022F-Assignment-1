@@ -404,6 +404,9 @@ def upload (connection, filename, password, filesize):
         bar.update(len(filedata))
 
     upload_file.close()
+    filesize = os.path.getsize(f"./serverfiles/{filename}")
+    send_msg = "SUCCESS\t" + str(filesize)
+    connection.send(send_msg.encode())
     out_hash = connection.recv(1024).decode()
 
     if (out_hash != in_hash.hexdigest()):
