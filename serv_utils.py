@@ -379,6 +379,7 @@ def upload (connection, filename, password, filesize):
     """
     # displaying on the cmd to show the progress of uploading the files
     bar = tqdm(range(filesize), f"Receiving {filename}", unit="B", unit_scale=True, unit_divisor=1024)
+    in_hash = hashlib.md5()
     upload_file = open(f"./serverfiles/{filename}", "wb")
     while True:
         received_bytes = bar.n
@@ -387,10 +388,16 @@ def upload (connection, filename, password, filesize):
 
         filedata = connection.recv(4096)
         upload_file.write(filedata)
+        in_hash.update(filedata)
         bar.update(len(filedata))
 
-    upload_file.close() 
-    if(os.path.exists(f"./serverfiles/{filename}")):
+    upload_file.close()
+    out_hash = connection.recv(1024).decode()
+
+    if (out_hash != in_hash.hexdigest()):
+        connection.send("NOTOK\tFile invalid".encode())
+        print("Uploaded with wrong hash.")
+    elif(os.path.exists(f"./serverfiles/{filename}")):
         add_file(filename, password)
         connection.send("OK\tFile has been successfully uploaded.".encode())
         print("Successfully uploaded.")

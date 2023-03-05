@@ -183,25 +183,28 @@ def main():
                 continue
             else:
                 print(f"[SERVER]: {recv_args[1]}")
-
+            out_hash = hashlib.md5()
             with open(file_path, "rb") as f:
                 while True:
                     data = f.read()
                     if not data:
                         break
-
+                    out_hash.update(data)
                     clientSocket.sendall(data)
-
+            f.close()
             # sending the file to be uploaded to the server 
             #   clientSocket.send(data)
+            clientSocket.send(out_hash.hexdigest().encode())
             message = clientSocket.recv(1024).decode().split("\t")
             cmd = message[0]
             msg = message[1]
+            
+            """
             if(cmd=="OK"):
                 print(f"{msg}")
             else:
-                print(f"{msg}")
-
+            """
+            print(f"{msg}")
 
         elif user_input == "4":
             send_msg = "OK\tLOGOUT\tNow"
