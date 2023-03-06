@@ -277,8 +277,7 @@ def download(connection, filename):
 
 # checks if a file is in the directory
 def check_for_file(filename):
-    # first updates the files and then searches through the dictionary
-    update_files()
+    # first updates the files and then searches through the dictionary\
     try:
         with open("files.json", "r") as files:
             files_dict = json.load(files)
@@ -286,7 +285,7 @@ def check_for_file(filename):
             if filename in files_dict:
                 return [True, [filename, files_dict[filename]]]
     except Exception as e:
-        print(e)
+        return [False, []]
     
     return [False, []]
 
@@ -337,8 +336,15 @@ def update_files():
         if not check_for_file(i)[0]:
             add_file(i, "")
     
-    with open("files.json", "r") as files:
-        files_dict = json.load(files)
+    try:
+        with open("files.json", "r") as files:
+            files_dict = json.load(files)
+    except FileNotFoundError as fe:
+        with open("files.json", "w") as files:
+            print("{}", file=files, end="")
+            
+        with open("files.json", "r") as files:
+            files_dict = json.load(files)
 
     delete_keys = []
     for key in files_dict:
@@ -446,7 +452,6 @@ def upload (connection, filename, password, filesize):
 
 
 if __name__=="__main__":
-    print("")
-    #make_key()
+    add_file("sd", "dsfd")
     
     
