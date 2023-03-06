@@ -31,6 +31,7 @@ def get_key():
 def make_key():
     """
     Method to generate an encryption key for user details.
+    Adds default admin user
     """
     key_file = open("filekey.key", "wb")
     key = Fernet.generate_key()
@@ -49,7 +50,10 @@ def login(username, passwd):
         passwd: the user's secret password
     
     return:
-        True if the username and password combination exists in the server otherwise False.
+        [status, message, user_type]
+        status is a True or False if the user was logged in or not
+        message is the message to send back to the client
+        user_type returns if the user is ADMIN or REGULAR
     """
 
     # reading in the encryption key
@@ -68,11 +72,12 @@ def login(username, passwd):
         print(e)
         return [False, "NOTAUTH\tserver user file encryption error.", ""]
     
+    # decrypts the file and adds the users to a list 
     all_users_str = fernet.decrypt(all_users).decode()
     all_users_list = all_users_str.split("\r\n")
     all_users_list.pop()
 
-
+    # checks for the user in the list and tries to mathc the password
     for user in all_users_list:
         items = user.split(",")
         if (items[0]==username):
@@ -244,6 +249,7 @@ def download(connection, filename):
         recv_msg = connection.recv(1024).decode()
         recv_args = recv_msg.split("\t")
         status = recv_args[0]
+        # if the client is ready to receive it sends the file in a big packet of bytes
         if status == "OK":
             print(f"{connection.getpeername()}: {recv_args[2]}")
             bar = tqdm(range(out_file_size), f"Sending {filename}", unit ="B", unit_scale=True, unit_divisor = 1024)
@@ -251,23 +257,28 @@ def download(connection, filename):
                 data = out_file.read(4096)
                 if not data:
                     break
+                # reads all the data and sends it via the connection socket
                 out_hash.update(data)
                 connection.sendall(data)
                 bar.update(len(data))
 
             out_file.close()
 
+        # receives the clients hash of the file and checks with the serverside hash to check integrity
         in_hash = connection.recv(1024).decode()
         hashed = (in_hash == out_hash.hexdigest())
         return out_file_size, hashed
     else:
+        # if the file does not exist, it just sends that the file could not be found
         send_msg = f"NOTOK\tNOTTRANSMITTING\tFile: {filename} could not be found"
         connection.send(send_msg.encode())
         print(f"The file under the name {filename} does not exist")
         return -1, False
 
-# checks if a file is in the director
+# checks if a file is in the directory
 def check_for_file(filename):
+    # first updates the files and then searches through the dictionary
+    update_files()
     try:
         with open("files.json", "r") as files:
             files_dict = json.load(files)
@@ -288,6 +299,7 @@ def add_file(filename, password):
     Returns True if the file has been added to the files list
     Returns False if the filename is already in the directory or if there was an error
     """
+
     if os.path.isfile("files.json"):  
         files_list = os.listdir("serverfiles")
         if check_for_file(filename)[0]:
@@ -295,11 +307,11 @@ def add_file(filename, password):
         try:
             with open("files.json", "r+") as files:
                 files_dict = json.load(files)
-
+                
+                # appends to the dictionary and inserts at the end of the file
                 files_dict[filename] = password
                 files.seek(0)
                 json.dump(files_dict, files)
-
             return True
         except Exception as e:
             print(e)
@@ -389,16 +401,19 @@ def upload (connection, filename, password, filesize):
     """
         Method to upload the files to the server, under the client directory directory.
         params:
-            socket: The connection with the client
-            name: The directory where all the files are stored and the name of the file. 
-            size: size used for the tqdm bar update
+            connection: The connection socket with the client
+            filename: The directory where all the files are stored and the name of the file. 
+            password: the password for the file being uploaded
+            filesize: size used for the tqdm bar update
         Connects to the client, retrieves the files that they want to upload and uploads the files to the
         specified directory 
     """
     # displaying on the cmd to show the progress of uploading the files
     bar = tqdm(range(filesize), f"Receiving {filename}", unit="B", unit_scale=True, unit_divisor=1024)
-    in_hash = hashlib.md5()
+    in_hash = hashlib.md5() # hash to check with client for integrity
     upload_file = open(f"./serverfiles/{filename}", "wb")
+
+    # keeps receiving the bits in chunks until the file is complete
     while True:
         received_bytes = bar.n
         if received_bytes >= filesize:
@@ -412,10 +427,12 @@ def upload (connection, filename, password, filesize):
 
     upload_file.close()
     filesize = os.path.getsize(f"./serverfiles/{filename}")
+    # sends a success message and filesize for comparison then receives the client hash
     send_msg = "SUCCESS\t" + str(filesize)
     connection.send(send_msg.encode())
     out_hash = connection.recv(1024).decode()
 
+    # sends an appropriate message given the status of the has
     if (out_hash != in_hash.hexdigest()):
         connection.send("NOTOK\tFile invalid".encode())
         print("Uploaded with wrong hash.")

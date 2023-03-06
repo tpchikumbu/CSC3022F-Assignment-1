@@ -1,26 +1,46 @@
-import os
+import os, platform
+# tries to install all the required modules
+try:
+    os.system("pip install -r requirements.txt")
+except:
+    print("Failed to install prerequisites")
+    time.sleep(1)
+finally:
+    if platform.system() == "Windows":
+        os.system("cls")
+    elif platform.system() == "Linux" or platform.system() == "Darwin":
+        os.system("clear") 
+
 import threading
 from socket import *
 import serv_utils
+import time
 CURRENT_USERS = {}
 
 
-def main () : 
-
+def main () :
     # gets the port on which to start the server on then listens for connections
     print("Starting...")
     if not os.path.exists("filekey.key"):
         print("No key found. Generating...")
         serv_utils.make_key()
     print("Encryption key found")
+    # creates serverfiles directory if it is non-existent
+    if not os.path.isdir("./serverfiles"): os.mkdir("./serverfiles")
+
+    
     serverPort = 50000
     x = (input("Enter the port number (leave blank to use default 50000):\n"))
     if x:
-        serverPort = int(x)
+        try:
+            serverPort = int(x)
+        except:
+            print("Error: serverPort defaulted to 50000")
     
+
+    # connects the socket
     serverSocket = socket(AF_INET, SOCK_STREAM)
     serverSocket.bind((gethostbyname(gethostname()),serverPort))
-    print(gethostbyname(gethostname()))
     serverSocket.listen(1)
     print("The server is ready to connect.\n")
     
@@ -126,6 +146,7 @@ def file_handling(conn, addr):
                 if data[1] == "VIEW":
 
                     print("View files")
+                    # gets a string representation of all the files in the system and transmits it
                     file_request = serv_utils.viewFiles(server_data_files="serverfiles")
                     
                     # sends the file list or the error message
@@ -136,6 +157,7 @@ def file_handling(conn, addr):
 
                     conn.send(send_msg.encode())
 
+                    # confirms if the file was actually sent to the client
                     if file_request[0]:
                         #if we've actually gotten something without a hitch
                         print(f"Successfully sent file list to {addr}")
@@ -154,7 +176,9 @@ def file_handling(conn, addr):
                     if file_request[0]:
                         # gets the password from the request and communicates with the client if there is need of a password
                         file_password = file_request[1][1]
+                        # if the file_password is empty the selection won't pass
                         if file_password:
+                            # sends a request for the password and handles the receipt from the client
                             conn.send(f"SUCCESS\tLOCKED\tThe file: {file_request[1][0]} is password protected".encode())
                             recv_msg = conn.recv(1024).decode()
                             recv_args = recv_msg.split("\t")
@@ -162,7 +186,9 @@ def file_handling(conn, addr):
                                 if recv_args[2] != file_password:
                                     conn.send("FAILURE\tNOTAUTH\tPassword incorrect. Request terminated.".encode())
                                     continue
-
+                    
+                    # sends the file to the client using the download function
+                    # gets the file size and the hashkey for the file in return
                     out_file_size, hashed = serv_utils.download(conn, filename)
 
                     # if the file was not found it just continues
@@ -204,6 +230,8 @@ def file_handling(conn, addr):
                     password = data[3]
                     filesize = int(data[4])
 
+                    # if the file that the client is uploading has an identical name to a file in serverfiles
+                    # the upload is blocked
                     if (serv_utils.check_for_file(filename))[0]:
                         send_msg = f"NOTOK\tFile: {filename} already exists on server. Process ended."
                         conn.send(send_msg.encode())
@@ -222,6 +250,7 @@ def file_handling(conn, addr):
                     break
 
                 elif data[1] == "ADMIN":
+                    # the only admin feature so far is the addition of a user
                     if isAdmin:
                         status_of_user_added, add_msg = serv_utils.add_user(data[2],data[3], eval(data[4]))
                         print(add_msg)
@@ -234,7 +263,7 @@ def file_handling(conn, addr):
                         conn.close()
                         break
         
-    except ConnectionError as e:
+    except Exception as e:
         print(e)
         return
 

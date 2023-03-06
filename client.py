@@ -96,6 +96,7 @@ def main():
             print("\nViewing files ends here\n\n")
 # DOWNLOAD FILES OPTION 
         elif user_input == "2": #download files
+            if not os.path.isdir("./downloads"): os.mkdir("./downloads")
             filename = input("Enter the name of the file to be downloaded\n")
             send_msg = "OK\tDOWNLOAD\t"+filename
             clientSocket.send(send_msg.encode()) 
